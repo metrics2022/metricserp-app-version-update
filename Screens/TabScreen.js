@@ -54,7 +54,7 @@ import CustPendingInvoices from './SalesOrder/CustPendingInvoices';
 import TermsCondition from './sales-quote/TermsCondition';
 import DeliveryRoot from './DeliveryStack';
 import CameraScreen from './DeliveryStack/cameraScreen';
-import SignatureScreen from './DeliveryStack/signatureScreen';
+//import SignatureScreen from './DeliveryStack/signatureScreen';
 import ConfirmOrder from './DeliveryStack/confirmOrder';
 
 
@@ -354,11 +354,11 @@ const DeliveryStackScreens = ({ navigation }) => (
         component={CameraScreen} 
         options={{ headerShown: false }}
       />
-    <AccountStack.Screen 
+    {/* <AccountStack.Screen 
         name="SignatureScreen" 
         component={SignatureScreen} 
         options={{ headerShown: false }}
-      />
+      /> */}
     <AccountStack.Screen 
         name="ConfirmOrder" 
         component={ConfirmOrder} 

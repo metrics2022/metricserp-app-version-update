@@ -64,13 +64,13 @@ const CameraScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleSkip = () => {
-    navigation.navigate('SignatureScreen', {
-      order,
-      orderData,
-      orderId
-    });
-  };
+  // const handleSkip = () => {
+  //   navigation.navigate('SignatureScreen', {
+  //     order,
+  //     orderData,
+  //     orderId
+  //   });
+  // };
 
   const handleNext = () => {
     if (images.length === 0) {
@@ -78,15 +78,15 @@ const CameraScreen = ({ navigation, route }) => {
       return;
     }
 
-    navigation.navigate('SignatureScreen', {
-      order,
-      orderData,
-      deliveryPhotos: images.map(img => ({
-        base64: img.base64,
-        // type: img.type
-      })),
-      orderId
-    });
+    // navigation.navigate('SignatureScreen', {
+    //   order,
+    //   orderData,
+    //   deliveryPhotos: images.map(img => ({
+    //     base64: img.base64,
+    //     // type: img.type
+    //   })),
+    //   orderId
+    // });
   };
 
   const handleRemoveImage = (index) => {
