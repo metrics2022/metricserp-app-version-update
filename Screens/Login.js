@@ -18,10 +18,8 @@ import {
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
 import { useIsFocused } from '@react-navigation/native';
 import { useForm, Controller } from "react-hook-form";
-
 import { useDispatch, useSelector } from 'react-redux';
 import VersionCheck from 'react-native-version-check';
-
 import { doLogin } from '../Redux/Actions/AuthActions';
 import { VERSION_CHECK_API_URL } from '../config/constant';
 import axios from "axios";
@@ -39,7 +37,7 @@ const Login = ({ navigation }) => {
 
     const onSubmit = async (data) => {
         dispatch({type:LOGIN_REQUEST});
-        const response = await axios.get(VERSION_CHECK_API_URL + '/version-check', {
+        const response = await axios.get(VERSION_CHECK_API_URL, {
             headers: {
                 "X-Access-Token": "wSsVR61wrET5CPgsz2esIukxn1gBUgzyEEx"
             }
@@ -48,28 +46,28 @@ const Login = ({ navigation }) => {
           const latestVersion =  Platform.OS === 'ios' ? response?.data?.data?.ios_version : response?.data?.data?.android_version;
           const currentVersion = VersionCheck.getCurrentVersion();
           // console.log(latestVersion, currentVersion)
-          if(currentVersion < latestVersion){
-            Alert.alert(
-              'Please Update',
-              'Please update the MetricsERP app to leverage the latest features..',
-              [
-                {
-                  text: 'Update',
-                  onPress: () => {
-                    BackHandler.exitApp();
-                    Linking.openURL(
-                      Platform.OS === 'ios'
-                        ? 'https://apps.apple.com/app/metricserp/id1480100130'
-                        : 'https://play.google.com/store/apps/details?id=com.metricsERP'
-                    ); // open the appropriate store depending on the platform
-                  }
-                }
-              ],
-              { cancelable: false }
-          );
-          }else{
+        //   if(currentVersion < latestVersion){
+        //     Alert.alert(
+        //       'Please Update',
+        //       'Please update the MetricsERP app to leverage the latest features..',
+        //       [
+        //         {
+        //           text: 'Update',
+        //           onPress: () => {
+        //             BackHandler.exitApp();
+        //             Linking.openURL(
+        //               Platform.OS === 'ios'
+        //                 ? 'https://apps.apple.com/app/metricserp/id1480100130'
+        //                 : 'https://play.google.com/store/apps/details?id=com.metricsERP'
+        //             ); // open the appropriate store depending on the platform
+        //           }
+        //         }
+        //       ],
+        //       { cancelable: false }
+        //   );
+        //   }else{
             dispatch(doLogin(data));
-          }
+        //   }
 
 
     }

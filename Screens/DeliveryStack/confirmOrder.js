@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity , BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity , BackHandler,Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather'; // For check icon
 
 const ConfirmOrder = ({ navigation, route }) => {
@@ -22,7 +22,10 @@ const ConfirmOrder = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Icon name="check-square" size={60} color="#00C851" />
+      <Image
+        source={require('../../assets/pngwing.com.png')}
+        style={{ width: 60, height: 60, resizeMode: 'contain' }}
+      />
       </View>
 
       <Text style={styles.title}>Delivery Confirmed</Text>

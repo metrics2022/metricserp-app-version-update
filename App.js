@@ -36,22 +36,22 @@ const RootStackScreen = () => {
   const isFocused = useIsFocused();
 
   enableScreens()
-  // const readItemFromStorage = async () => {
-  //   try {
-  //     const loggedInUser = await AsyncStorage.getItem("uuid");
-  //     //console.log("localstoragedata", loggedInUser);
-  //     if (loggedInUser !== null) {
-  //       setIsLoggedIn(loggedInUser);
-  //     }else{
-  //       setIsLoggedIn("");
-  //     }
-  //   } catch (e) {
-  //     alert('Failed to fetch the data from storage')
-  //   }
-  // }
+  const readItemFromStorage = async () => {
+    try {
+      const loggedInUser = await AsyncStorage.getItem("uuid");
+      //console.log("localstoragedata", loggedInUser);
+      if (loggedInUser !== null) {
+        setIsLoggedIn(loggedInUser);
+      }else{
+        setIsLoggedIn("");
+      }
+    } catch (e) {
+      alert('Failed to fetch the data from storage')
+    }
+  }
 
   useEffect(() => {
-    //readItemFromStorage();
+    readItemFromStorage();
     setTimeout(() => {
       setIsloading(false);
     }, 1500);
@@ -67,7 +67,7 @@ const RootStackScreen = () => {
 
   // useEffect(() => {
   //   const init = async () => {
-  //     const response = await axios.get(VERSION_CHECK_API_URL + '/version-check', {
+  //     const response = await axios.get(VERSION_CHECK_API_URL, {
   //       headers: {
   //           "X-Access-Token": "wSsVR61wrET5CPgsz2esIukxn1gBUgzyEEx"
   //       }

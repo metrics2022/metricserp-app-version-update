@@ -8,8 +8,8 @@ import {
   Image,
 } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
-import Icon from 'react-native-vector-icons/Feather';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import Icon from 'react-native-vector-icons/AntDesign';
+import HeaderTextLeft from '../../Component/HeaderTextLeft';
 
 const CameraScreen = ({ navigation, route }) => {
   const [images, setImages] = useState([]); // Now stores objects with uri and base64
@@ -64,29 +64,29 @@ const CameraScreen = ({ navigation, route }) => {
     }
   };
 
-  // const handleSkip = () => {
-  //   navigation.navigate('SignatureScreen', {
-  //     order,
-  //     orderData,
-  //     orderId
-  //   });
-  // };
+  const handleSkip = () => {
+    navigation.navigate('SignatureScreen', {
+      order,
+      orderData,
+      orderId
+    });
+  };
 
   const handleNext = () => {
     if (images.length === 0) {
-      Alert.alert('Error', 'Please capture at least one photo');
+      Alert.alert('Required', 'Please capture at least one photo');
       return;
     }
 
-    // navigation.navigate('SignatureScreen', {
-    //   order,
-    //   orderData,
-    //   deliveryPhotos: images.map(img => ({
-    //     base64: img.base64,
-    //     // type: img.type
-    //   })),
-    //   orderId
-    // });
+    navigation.navigate('SignatureScreen', {
+      order,
+      orderData,
+      deliveryPhotos: images.map(img => ({
+        base64: img.base64,
+        // type: img.type
+      })),
+      orderId
+    });
   };
 
   const handleRemoveImage = (index) => {
@@ -101,13 +101,14 @@ const CameraScreen = ({ navigation, route }) => {
 
   return (
     <>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={{ position: 'absolute', left: 15, top: 18 }}>
-          <AntDesign name='arrowleft' size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Delivery Photos </Text>
-      </View>
+      
       <View style={styles.container}>
+        <HeaderTextLeft
+          goBack={goBack}
+          title="Delivery Photos"
+          // subTitle="Capture photos for delivery verification"
+          fontSize={20}
+        />
         <Text style={[styles.header1, {fontSize:14, color:'#000', fontWeight:'700'}]}>SO #{orderData?.so_code}</Text>
         <Text style={[styles.header1, {fontSize:14, color:'#000', fontWeight:'700'}]}>Customer: {orderData?.customer_name}</Text>
         <View style={{flex:1, flexDirection:'column', justifyContent:'space-between'}}>
@@ -127,7 +128,7 @@ const CameraScreen = ({ navigation, route }) => {
                       style={styles.removeButton}
                       onPress={() => handleRemoveImage(index)}
                     >
-                      <Icon name="x" size={16} color="#fff" />
+                      <Icon name="closesquare" size={16} color="#fff" />
                     </TouchableOpacity>
                   </View>
                 ))}

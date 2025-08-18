@@ -80,7 +80,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
     }
     signingConfigs {
         debug {
@@ -116,3 +116,9 @@ dependencies {
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+
+// Add this to ensure AntDesign.ttf is copied to the assets/fonts directory
+project.ext.vectoricons = [
+    iconFontNames: [ 'AntDesign.ttf','MaterialIcons.ttf', 'FontAwesome5_Solid.ttf', 'FontAwesome5_Regular.ttf','FontAwesome.ttf','SimpleLineIcons.ttf' ]
+]
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
