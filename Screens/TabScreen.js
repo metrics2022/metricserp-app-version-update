@@ -353,7 +353,7 @@ const DeliveryStackScreens = ({ navigation }) => (
         name="CameraScreen" 
         component={CameraScreen} 
         options={{ headerShown: false }}
-      />
+    />
     <AccountStack.Screen 
         name="SignatureScreen" 
         component={SignatureScreen} 
@@ -363,7 +363,7 @@ const DeliveryStackScreens = ({ navigation }) => (
         name="ConfirmOrder" 
         component={ConfirmOrder} 
         options={{ headerShown: false }}
-      />
+    />
   </AccountStack.Navigator>
 );
 
@@ -386,20 +386,20 @@ const TabScreen = ({ route }) => {
   }
 
   const updateCheck = async (routeName, navigation) => {
-    try {
-      const response = await axios.get(VERSION_CHECK_API_URL + '/version-check', {
-        headers: {
-          "X-Access-Token": "wSsVR61wrET5CPgsz2esIukxn1gBUgzyEEx"
-        }
-      });
+    // try {
+    //   const response = await axios.get(VERSION_CHECK_API_URL, {
+    //     headers: {
+    //       "X-Access-Token": "wSsVR61wrET5CPgsz2esIukxn1gBUgzyEEx"
+    //     }
+    //   });
 
-      const latestVersion = Platform.OS === 'ios' ? response?.data?.data?.ios_version : response?.data?.data?.android_version;
-      const currentVersion = VersionCheck.getCurrentVersion();
+    //   const latestVersion = Platform.OS === 'ios' ? response?.data?.data?.ios_version : response?.data?.data?.android_version;
+    //   const currentVersion = VersionCheck.getCurrentVersion();
 
      
-    } catch (error) {
-      console.error('Error checking version:', error);
-    }
+    // } catch (error) {
+    //   console.error('Error checking version:', error);
+    // }
   };
 
   return (

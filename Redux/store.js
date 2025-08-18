@@ -1,5 +1,5 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux'
-import thunk from 'redux-thunk'
+import {thunk} from 'redux-thunk'
 import { AllOrganizationReducers } from './Reducers/AllOrganizationReducers';
 import { LoginReducer } from './Reducers/AuthReducers';
 import { AutocompleteCategoryReducers } from './Reducers/AutocompleteCategoryReducers';
@@ -22,7 +22,7 @@ import { ResourceUpdateReducers } from './Reducers/ResourceUpdateReducer';
 import { ResourceTransactionsReducers } from './Reducers/ResourceTransactionsReducers'
 import { SalesOrderCartReducer } from './Reducers/SalesOrderCartReducers';
 import { DeliveryReducer } from './Delivery/DeliveryReducers';
-// import versionCheckMiddleware from './Middleware/versionCheckMiddleware';
+import versionCheckMiddleware from './Middleware/versionCheckMiddleware';
 
 const reducers = combineReducers({
     LoginReducer:LoginReducer,
@@ -50,6 +50,6 @@ const reducers = combineReducers({
 })
 
 
-const store = createStore(reducers, applyMiddleware(thunk));
+const store = createStore(reducers, applyMiddleware(thunk, versionCheckMiddleware));
 
 export default store;

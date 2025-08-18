@@ -5,8 +5,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image,
-  ActivityIndicator,
   SafeAreaView,
   TextInput,
   ScrollView,
@@ -15,17 +13,14 @@ import {
   Alert,
   Keyboard
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/AntDesign';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Entypo from 'react-native-vector-icons/Entypo';
 import { useIsFocused,useFocusEffect } from '@react-navigation/native';
 import { DeliveryAction } from '../../Redux/Delivery/DeliveryAction';
 import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LogoOverlay from '../../Component/LoaderComponent';
+import HeaderTextLeft from '../../Component/HeaderTextLeft';
 
 
 const screenWidth = Dimensions.get('window').width;
@@ -203,9 +198,9 @@ const Index = ({ navigation }) => {
         {order.customer_site_mobno}
       </Text>
       <View style={{ position: 'relative', paddingLeft: 14 }}>
-        <Ionicons name="location-sharp" size={14} color="#ed7370" style={{ position: 'absolute', left: 0, top: 2 }} />
+        <Icon name="enviromento" size={14} color="#ed7370" style={{ position: 'absolute', left: 0, top: 2 }} />
         <Text style={styles.customerAddress}>
-          {order.customer_site_addr1} , {order.customer_site_postcode}
+           {order.customer_site_addr1} , {order.customer_site_postcode}
         </Text>
       </View>
       <View style={[styles.statusBadge, order.delivery_status == 0 ? styles.pending : styles.delivered]}>
@@ -230,34 +225,18 @@ const Index = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       {searchState?.isLoading && (
-        <View
-          style={{
-            flex: 1,
-            position: 'absolute',
-            zIndex: 2,
-            left: 0,
-            width: '100%',
-            justifyContent: 'center',
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(255,255,255,0.9)',
-          }}
-        >
-          <View style={{ paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5 }}>
-            <Image source={require('../../assets/logoSmall.png')} style={{ width: 45, height: 45, resizeMode: 'cover' }} />
-          </View>
-        </View>
+        <LogoOverlay />
       )}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={{ position: 'absolute', left: 15, top: 18 }}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Delivery Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Manage your delivery orders efficiently</Text>
-      </View>
-
+    
       <View style={styles.mainWrapper}>
+        {/* <View style={{ backgroundColor: '#f6f7fb', borderBottomColor: '#dfe0e4', borderBottomWidth: 1 }}> */}
+        <HeaderTextLeft
+          goBack={goBack}
+          title="Delivery Dashboard"
+          subTitle="Manage your delivery orders efficiently"
+          fontSize={20}
+        />
+      {/* </View> */}
         <View style={styles.searchContainer}>
           <View style={{ width: screenWidth - 120 }}>
             <TextInput
@@ -270,7 +249,7 @@ const Index = ({ navigation }) => {
             />
           </View>
           <TouchableOpacity style={styles.searchBtn} onPress={() => handleSearch(0)}>
-            <SimpleLineIcons name="magnifier" size={20} color="#76747f" />
+           <Icon name="search1" size={18} color="#76747f" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterBtn}
@@ -280,13 +259,13 @@ const Index = ({ navigation }) => {
               handleSearch(0, '');
             }}
           >
-            <Icon name="undo" size={18} color="#4b6efe" />
+            <Icon name="sync" size={16} color="#4b6efe" />
             {/* <Text style={styles.filterBtnText}>Reset</Text> */}
           </TouchableOpacity>
         </View>
 
         <View style={styles.filterContainer}>
-          <Text style={styles.sectionTitle}>Today's Deliveries</Text>
+          {/* <Text style={styles.sectionTitle}>Today's Deliveries</Text> */}
           <View style={styles.filterButtons}>
             <TouchableOpacity
               style={selectedStatus === 0 ? styles.filterButtonActive : styles.filterButton}
@@ -331,7 +310,7 @@ const Index = ({ navigation }) => {
                 <Text style={styles.modalTitle}>DELIVERY CONFIRMATION</Text>
               </View>
               <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Entypo name="cross" size={24} color="red" />
+                 <Icon name="closesquare" size={24} color="red" />
               </TouchableOpacity>
             </View>
 
@@ -341,13 +320,13 @@ const Index = ({ navigation }) => {
               <ScrollView style={{ maxHeight: 200 }} contentContainerStyle={styles.itemList}>
                 {orderLines?.map((item, index) => (
                   <View key={index} style={styles.itemRow}>
-                    <MaterialCommunityIcons
-                      name="package-variant-closed"
-                      size={24}
-                      color="#ff9900"
-                      style={styles.itemIcon}
-                    />
-                    <Text style={styles.itemText}>
+                    <Icon
+                        name="dropbox"
+                        size={24}
+                        color="#ff9900"
+                        style={styles.itemIcon}
+                      />
+                      <Text style={styles.itemText}>
                       {formatQuantity(item.order_qty)} x{' '}
                       {item.item_code === item.item_description ? (
                         item.item_code
@@ -426,9 +405,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   searchContainer: {
-    marginBottom: 15,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 10,
   },
   searchInput: {
     width: '100%',
@@ -454,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterBtn: {
-    width: 45,
+    width: 46,
     marginLeft: 5,
     backgroundColor: '#FFF',
     borderRadius: 25,

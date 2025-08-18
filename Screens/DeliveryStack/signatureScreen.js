@@ -1,25 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
-import SignaturePad from 'react-native-signature-pad';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import { View, StyleSheet, TouchableOpacity, Text, Alert, SafeAreaView } from 'react-native';
 import { ConfirmDelivery } from '../../Redux/Delivery/DeliveryAction';
 import { useDispatch, useSelector } from 'react-redux';
-import Geolocation from 'react-native-geolocation-service'; // Add this import
-import { PermissionsAndroid } from 'react-native'; // For Android permissions
+import Geolocation from 'react-native-geolocation-service';
+import { PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LogoOverlay from '../../Component/LoaderComponent';
+import HeaderTextLeft from '../../Component/HeaderTextLeft';
+import SignatureCanvas from 'react-native-signature-canvas';
 
 const SignatureScreen = ({ navigation, route }) => {
   const state = useSelector((state) => state.DeliveryReducer);
   const dispatch = useDispatch();
   const signatureRef = useRef(null);
-  const [signature, setSignature] = useState(null);
-  const [signaturePadKey, setSignaturePadKey] = useState(1);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const { order, orderData, orderId, deliveryPhotos = [] } = route.params;
-  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
-  const [empId, setEmpId] = useState('');
 
-  // Request location permission
+  const [signature, setSignature] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const { orderData, orderId, deliveryPhotos = [] } = route.params;
+  const [empId, setEmpId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const requestLocationPermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
@@ -39,207 +39,277 @@ const SignatureScreen = ({ navigation, route }) => {
     }
   };
 
-  // Get current location
-  const getCurrentLocation = (retryCount = 0) => {
-  const MAX_RETRIES = 2;
-  const RETRY_DELAY = 3000; // in milliseconds
-
-  setIsFetchingLocation(true);
-
+  const getCurrentLocation = () => {
+    setIsLoading(true);
     Geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
-
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,{
-              headers: {
-                'User-Agent': 'MetricsERP/1.1.2 (metricsbs@gmail.com)', // Replace this properly
-                'Accept': 'application/json',
-              },
-            }
-          );
-
-          if (!response.ok) {
-            // Non-200 response, avoid parsing as JSON
-            //console.warn(`Geocoding failed with status ${response.status}`);
-            setCurrentLocation(`${latitude},${longitude}`);
-          } else {
-            const data = await response.json();
-            //console.log('Locationdata', data);
-            const address = data?.display_name || `${latitude},${longitude}`;
-            setCurrentLocation(address);
-          }
-
-        } catch (error) {
-          //console.log('Geocoding error:', error);
-          setCurrentLocation(`${latitude},${longitude}`);
-        } finally {
-          setIsFetchingLocation(false);
-        }
+        setCurrentLocation(`${latitude},${longitude}`);
+        setIsLoading(false);
       },
       (error) => {
-        //console.warn('Location error:', error.message);
-
-        if (retryCount < MAX_RETRIES) {
-          Alert.alert('Location Error', 'Trying to fetch location again...');
-          setTimeout(() => getCurrentLocation(retryCount + 1), RETRY_DELAY);
-        } else {
-          setCurrentLocation("unavailable");
-          setIsFetchingLocation(false);
-        }
+        console.warn(error);
+        setCurrentLocation("unavailable");
+        setIsLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   };
 
-  //  const getCurrentLocation = () => {
-  //   setIsFetchingLocation(true);
-  //   Geolocation.getCurrentPosition(
-  //     async (position) => {
-  //       const { latitude, longitude } = position.coords;
-
-  //       try {
-  //         const response = await fetch(
-  //           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-  //         );
-  //         const data = await response.json();
-  //         const address = data?.display_name || `${latitude},${longitude}`;
-  //         setCurrentLocation(address);
-  //       } catch (error) {
-  //         //console.log('Geocoding error:', error);
-  //         setCurrentLocation(`${latitude},${longitude}`);
-  //       } finally {
-  //         setIsFetchingLocation(false);
-  //       }
-  //     },
-  //     (error) => {
-  //       //console.log(error.code, error.message);
-  //       setCurrentLocation("unavailable");
-  //       setIsFetchingLocation(false);
-  //     },
-  //     { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-  //   );
-  // };
-
-
-
   const readItemFromStorage = async () => {
     try {
-      const jsonValue = await AsyncStorage.getItem('uuid')
-      return jsonValue != null ? JSON.parse(jsonValue) : null
+      const jsonValue = await AsyncStorage.getItem('uuid');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
     } catch (e) {
-      // read error
+      return null;
     }
-  }
-
+  };
 
   useEffect(() => {
-    // Initialize signature pad
-    if (signatureRef.current) {
-      setSignaturePadKey(prev => prev + 1);
-      setSignature(null);
-    }
     const getUserId = async () => {
       const uuid = await readItemFromStorage();
-      setEmpId(uuid?.emp_data?.emp_id)
-    }
+      setEmpId(uuid?.emp_data?.emp_id);
+    };
 
-
-    // Get location when component mounts
     const fetchLocation = async () => {
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
         getCurrentLocation();
       }
     };
+
     fetchLocation();
     getUserId();
   }, []);
 
   const handleClear = () => {
-    setSignaturePadKey(prev => prev + 1);
+    signatureRef.current?.clearSignature();
     setSignature(null);
   };
 
-  // const handleDone = async () => {
-  //   if (!signature) {
-  //     Alert.alert('Signature required', 'Please take the customer\'s signature before proceeding.');
-  //     return;
-  //   }
-
-  //   const payload = {
-  //     delivery_driver_id: empId,
-  //     so_header_id: orderId,
-  //     signatures: signature?.base64DataUrl,
-  //     delivery_photos: deliveryPhotos.map(photo =>
-  //       `data:${photo.type || 'image/jpeg'};base64,${photo.base64}`
-  //     ),
-  //     driver_current_location: currentLocation || "unavailable"
-  //   };
-
-  //   try {
-  //     const res = await dispatch(ConfirmDelivery(payload));
-  //     if(res !== null){
-  //       navigation.navigate('ConfirmOrder', { orderId: orderData?.so_code, customerName:orderData?.customer_name });
-  //     }else{
-  //       alert('Something went wrong. Please try again.');
-  //     }
-
-  //   } catch (apiError) {
-  //     Alert.alert('Could not confirm delivery. Please try again.');
-  //   }
-  // };
-
-
-  const handleDone = async () => {
-  if (!signature) {
-    Alert.alert('Signature required', 'Please take the customer\'s signature before proceeding.');
-    return;
-  }
-
-  const payload = {
-    delivery_driver_id: empId,
-    so_header_id: orderId,
-    signatures: signature?.base64DataUrl,
-    delivery_photos: deliveryPhotos.map(photo =>
-      `data:${photo.type || 'image/jpeg'};base64,${photo.base64}`
-    ),
-    driver_current_location: currentLocation || "unavailable"
+  const handleEnd = () => {
+    signatureRef.current?.readSignature();
   };
 
-  try {
-    await dispatch(ConfirmDelivery(payload));  // Wait for dispatch to complete
+  const handleSignature = (signature) => {
+    console.log('Signature captured:', signature);
+    setSignature(signature);
+  };
 
-    const error = state.errorMessage;
-    if (!error || error.status !== 'Error') {
-      navigation.navigate('ConfirmOrder', {
-        orderId: orderData?.so_code,
-        customerName: orderData?.customer_name,
-      });
-    } else {
-      const msg = 'Something went wrong. Please try again.';
-      Alert.alert('Error', msg);
+  const handleError = (error) => {
+    console.error('Signature pad error:', error);
+    Alert.alert('Error', 'Failed to capture signature');
+  };
+
+  const handleDone = async () => {
+    if (!signature) {
+      Alert.alert('Signature required', 'Please provide a signature before submitting');
+      return;
     }
 
-  } catch (apiError) {
-    Alert.alert('Could not confirm delivery. Please try again.');
-  }
-};
+    setIsLoading(true);
+    
+    try {
+      // Extract base64 data (remove the data URL prefix if present)
+      const base64Data = signature.startsWith('data:') 
+        ? signature.split(',')[1] 
+        : signature;
 
+      const payload = {
+        delivery_driver_id: empId,
+        so_header_id: orderId,
+        signatures: signature,
+        delivery_photos: deliveryPhotos.map(photo => 
+          `data:${photo.type || 'image/jpeg'};base64,${photo.base64}`
+        ),
+        driver_current_location: currentLocation || "unavailable"
+      };
+
+      await dispatch(ConfirmDelivery(payload));
+
+      if (!state.errorMessage || state.errorMessage.status !== 'Error') {
+        navigation.navigate('ConfirmOrder', {
+          orderId: orderData?.so_code,
+          customerName: orderData?.customer_name,
+        });
+      } else {
+        throw new Error(state.errorMessage.message || 'Delivery confirmation failed');
+      }
+    } catch (error) {
+      console.error('Delivery confirmation error:', error);
+      Alert.alert('Error', error.message || 'Failed to confirm delivery');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const goBack = () => {
     navigation.goBack();
   };
 
   return (
-    <>
-      
+    <SafeAreaView style={{ flex: 1 }}>
+      {(state?.isLoading || isLoading) && <LogoOverlay />}
 
-      
-    </>
+      <View style={styles.container}>
+        <HeaderTextLeft
+          goBack={goBack}
+          title="Customer Signature"
+          fontSize={20}
+        />
+
+        <Text style={styles.orderInfo}>SO #{orderData?.so_code}</Text>
+        <Text style={styles.orderInfo}>Customer: {orderData?.customer_name}</Text>
+        <Text style={styles.title}>Please Sign to Confirm Delivery</Text>
+        <Text style={styles.subtitle}>Customer signature required</Text>
+        
+        {currentLocation && (
+          <Text style={styles.locationText}>
+            Current Location: {currentLocation === "unavailable" ? "Not available" : currentLocation}
+          </Text>
+        )}
+
+        <View style={styles.signatureContainer}>
+          <SignatureCanvas
+            ref={signatureRef}
+            onOK={handleSignature}
+            onEnd={handleEnd}
+            onError={handleError}
+            penColor="#000000"
+            backgroundColor="rgba(255,255,255,0)"
+            imageType="image/png"
+            dataURLType="image/png"
+            autoClear={false}
+            descriptionText="Sign here"
+            webStyle={`
+              .m-signature-pad {
+                box-shadow: none;
+                border: none;
+                height: 100%;
+              }
+              .m-signature-pad--body {
+                border: none;
+                margin: 0;
+                padding: 0;
+                height: 100%;
+              }
+              .m-signature-pad--footer {
+                display: none !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                pointer-events: none !important;
+              }
+              body, html {
+                background-color: transparent;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+              }
+            `}
+          />
+
+          
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.clearButton} 
+            onPress={handleClear}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>CLEAR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.doneButton]}
+            onPress={handleDone}
+            disabled={!signature || isLoading}
+          >
+            <Text style={styles.buttonText}>DONE</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <Text style={styles.footerNote}>
+          Signature will be saved as proof of delivery.
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 };
 
-export default SignatureScreen;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  signatureContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    marginVertical: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  clearButton: {
+    flex: 1,
+    padding: 15,
+    marginRight: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D32F2F',
+    backgroundColor: '#D32F2F',
+    alignItems: 'center',
+  },
+  doneButton: {
+    flex: 1,
+    padding: 15,
+    marginLeft: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#005A92',
+    backgroundColor: '#005A92',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  footerNote: {
+    textAlign: 'center',
+    marginTop: 15,
+    color: '#555',
+    fontSize: 12,
+  },
+  title: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 21,
+    marginBottom: 10,
+    color: '#555'
+  },
+  subtitle: {
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 10,
+  },
+  locationText: {
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 10,
+    fontStyle: 'italic',
+  },
+  orderInfo: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+});
 
+export default SignatureScreen;
