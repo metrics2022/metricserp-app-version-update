@@ -42,9 +42,9 @@ const LogoOverlay = () => {
                     source={require('../assets/metrics-logo.webp')} 
                     style={[styles.logo, { transform: [{ scale }] }]} 
                 />
-                <Animated.Text style={[styles.text, { opacity: textOpacity }]}>
+                {/* <Animated.Text style={[styles.text, { opacity: textOpacity }]}>
                     MetricsERP
-                </Animated.Text>
+                </Animated.Text> */}
             </View>
         </View>
     );

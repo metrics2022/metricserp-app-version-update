@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     ScrollView,
@@ -9,7 +9,9 @@ import {
     View,
     Image,
     ActivityIndicator,
-    Alert
+    Alert,
+    FlatList,
+    Animated
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,24 +19,49 @@ import HeaderTextLeft from '../../Component/HeaderTextLeft';
 import { useDispatch, useSelector } from 'react-redux';
 import { customerInfoAction, getDefaultSQTermsTemplateAction } from '../../Redux/Actions/SalesQuoteAction';
 import Fontisto from 'react-native-vector-icons/Fontisto';
+import Icon from 'react-native-vector-icons/AntDesign';
+import LogoOverlay from '../../Component/LoaderComponent';
 
 const Contact = ({ navigation, route }) => {
     const cartState = useSelector(state => state.CartReducer);
-    const state = useSelector((state) => state.AllSalesQuote)
-
-
+    const state = useSelector((state) => state.AllSalesQuote);
     const [customerContactId, setCustomerContactId] = useState('');
-
     const [customerId, setCustomerId] = useState(null);
     const [customerEmail, setCustomerEmail] = useState('');
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastOpacity] = useState(new Animated.Value(0));
 
+    const dispatch = useDispatch();
+
+    const showToastMessage = (message) => {
+        setToastMessage(message);
+        setShowToast(true);
+        
+        Animated.sequence([
+            Animated.timing(toastOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true
+            }),
+            Animated.delay(2000),
+            Animated.timing(toastOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true
+            })
+        ]).start(() => {
+            setShowToast(false);
+        });
+    };
 
     useEffect(() => {
         const getCustomerId = async () => {
             try {
                 const id = await AsyncStorage.getItem('customer_id');
                 if (id !== null) {
-                    setCustomerId(parseInt(id, 10));                }
+                    setCustomerId(parseInt(id, 10));
+                }
             } catch (error) {
                 console.error('Error retrieving customer_id from AsyncStorage:', error);
             }
@@ -43,18 +70,13 @@ const Contact = ({ navigation, route }) => {
         getCustomerId();
     }, []);
 
-
-
-
-    const dispatch = useDispatch();
-
     useEffect(() => {
-        if(customerId != null &&
-        dispatch(customerInfoAction({
-            "value": customerId
-        })));
-    }, [dispatch , customerId]);
-
+        if (customerId != null) {
+            dispatch(customerInfoAction({
+                "value": customerId
+            }));
+        }
+    }, [dispatch, customerId]);
 
     const storeCustomerContactId = async (id) => {
         try {
@@ -66,216 +88,336 @@ const Contact = ({ navigation, route }) => {
 
     useEffect(() => {
         if (state?.sqCustomerSearchResult?.contactData?.length > 0) {
-            // console.log("state?.sqCustomerSearchResult?.contactData", state?.sqCustomerSearchResult?.contactData)
-            const isPrimaryAddess = state?.sqCustomerSearchResult?.contactData?.find((item)=> item.customer_contact_primary == 1);
+            const isPrimaryAddess = state?.sqCustomerSearchResult?.contactData?.find((item) => item.customer_contact_primary == 1);
             setCustomerContactId(isPrimaryAddess?.customer_contact_id);
-            // console.log("isPrimaryAddess?.customer_contact_id", isPrimaryAddess)
             storeCustomerContactId(isPrimaryAddess?.customer_contact_id);
             setCustomerEmail(isPrimaryAddess?.contact_email);
         }
     }, [state?.sqCustomerSearchResult?.contactData]);
 
-
-
-
-
     const handleContactSelection = (id, email) => {
         setCustomerContactId(id);
         storeCustomerContactId(id);
         setCustomerEmail(email);
+        showToastMessage('Contact selected successfully!');
     };
 
     const goBack = () => {
         navigation.goBack();
     }
 
-    const handleNext = async ()=> {
+    const handleNext = async () => {
+        if (!customerContactId) {
+            showToastMessage('Please select a contact to continue');
+            return;
+        }
+        
         const res = await dispatch(getDefaultSQTermsTemplateAction());
-        if(res?.status == "Success"){
+        if (res?.status == "Success") {
             navigation.navigate('QuoteDescription', {
                 contactId: customerContactId,
                 currency: route.params.currency,
                 currencyId: route.params.currencyId,
-                orgId:route.params?.orgId,
-                customerEmail:customerEmail
+                orgId: route.params?.orgId,
+                customerEmail: customerEmail
             });
         }
     }
 
+    const renderContactItem = ({ item, index }) => {
+        return (
+            <TouchableOpacity 
+                onPress={() => handleContactSelection(item.customer_contact_id, item?.contact_email)} 
+                style={[
+                    styles.contactCard,
+                    customerContactId == item.customer_contact_id && styles.selectedContactCard
+                ]}
+            >
+                {item.customer_contact_primary == 1 && (
+                    <View style={styles.primaryBadge}>
+                       <Icon size={20} name="star" color="#1788F0" style={styles.bookmarkIcon} />
+                        {/* <Text style={styles.primaryBadgeText}>Primary</Text> */}
+                    </View>
+                )}
+                
+                <View style={styles.radioContainer}>
+                    <View style={styles.circle}>
+                        {customerContactId == item.customer_contact_id && (<View style={styles.checkedCircle} />)}
+                    </View>
+                </View>
+
+                <View style={styles.contactInfo}>
+                    <Text style={styles.contactName}>
+                        {item.contact_fname} {item.contact_lname}
+                    </Text>
+                    
+                    <View style={styles.contactDetail}>
+                        <Icon name="mail" size={16} color="#7F8C8D" style={styles.contactIcon} />
+                        <Text style={styles.contactText}>{item.contact_email}</Text>
+                    </View>
+                    
+                    <View style={styles.contactDetail}>
+                        <Icon name="phone" size={16} color="#7F8C8D" style={styles.contactIcon} />
+                        <Text style={styles.contactText}>{item.contact_phone || 'No phone number'}</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-        {
-                state?.isLoading && (
-                    <View style={{ flex: 1, position: "absolute", zIndex: 2, left: 0, width: "100%", justifyContent: "center", height: "100%", justifyContent: 'center', alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)" }}>
-                        <View style={{
-                            paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5
-                        }}>
-                            <Image source={require('../../assets/logoSmall.png')} style={{ width: 45, height: 45, resizeMode: "cover" }} />
+        <SafeAreaView style={styles.safeArea}>
+            {state?.isLoading && <LogoOverlay />}
+            
+            {/* Toast Notification */}
+            {showToast && (
+                <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
+                    <Text style={styles.toastText}>{toastMessage}</Text>
+                </Animated.View>
+            )}
+            
+            <View style={styles.container}>
+                <HeaderTextLeft 
+                    title={"Select Contact"} 
+                    subTitle={"Select a contact for this quotation"}
+                    goBack={goBack} 
+                    fontSize={20} 
+                />
+                
+                
+                {state?.sqCustomerSearchResult?.contactData?.length > 0 ? (
+                    <FlatList
+                        data={state.sqCustomerSearchResult.contactData}
+                        renderItem={renderContactItem}
+                        keyExtractor={(item, index) => `${item.customer_contact_id}-${index}`}
+                        contentContainerStyle={styles.contactsList}
+                        showsVerticalScrollIndicator={false}
+                    />
+                ) : (
+                    !state?.isLoading && (
+                        <View style={styles.emptyState}>
+                            <Icon name="user" size={50} color="#BDC3C7" />
+                            <Text style={styles.emptyStateText}>No Contacts Found</Text>
+                            <Text style={styles.emptyStateSubText}>
+                                There are no contacts available for this customer
+                            </Text>
                         </View>
-                    </View>
-                )
-        }
-            <View style={styles.mainWrapper}>
-                <HeaderTextLeft title={"Contact"} goBack={goBack} fontSize={25} />
-                <ScrollView >
-                    {
-                        state?.sqCustomerSearchResult?.contactData?.length > 0 ? (
-                            state?.sqCustomerSearchResult?.contactData?.map((elem, index, arr) => {
-                                return (
-                                    <View key={index} style={{ paddingHorizontal: 10 }}>
-                                        <TouchableOpacity key={index} onPress={() => handleContactSelection(elem.customer_contact_id, elem?.contact_email)} style={[styles.singleRadioBtn, customerContactId == elem.customer_contact_id && {
-                                            shadowColor: "#000",
-                                            shadowOffset: {
-                                                width: 0,
-                                                height: 1,
-                                            },
-                                            shadowOpacity: 0.22,
-                                            shadowRadius: 2.22,
-                                            elevation: 3,
-                                            backgroundColor: '#f7f7f7'
-                                        }]}>
-                                            {elem.customer_contact_primary == 1 && <Fontisto size={20} name='bookmark-alt' color="#1788F0" style={{position:'absolute', right:15, top:0}} />}
-                                            <View style={styles.circle}>
-                                                {customerContactId == elem.customer_contact_id && (<View style={styles.checkedCircle} />)}
-                                            </View>
-
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Text style={{ marginLeft: 15 }}>
-                                                </Text>
-                                                <Text style={{ color: "#1f1f1f", fontWeight: "700", fontSize: 16, width: "100%", marginBottom: 3, marginLeft: 8 }}>{elem.contact_fname} {elem.contact_lname} </Text>
-                                            </View>
-
-
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Text style={{ marginLeft: 15 }}>
-                                                </Text>
-                                                <Text style={{ color: "#6c6c6c", fontSize: 14, width: "100%", marginBottom: 3, marginLeft: 8, paddingRight: 28 }}>{elem.contact_email} </Text>
-                                            </View>
-
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Text style={{ marginLeft: 15 }}>
-                                                </Text>
-                                                <Text style={{ color: "#6c6c6c", fontSize: 14, width: "100%", marginBottom: 3, marginLeft: 8 }}>Phone Number: {elem.contact_phone}</Text>
-                                            </View>
-
-                                        </TouchableOpacity>
-                                    </View>
-                                )
-                            })
-                        ) : (
-                            <View style={{ flexDirection: "row", justifyContent: "center" }}>
-                                <Text style={{ color: "#6c6c6c", fontSize: 13 }}>No Result Found</Text>
-                            </View>
-                        )
-
-                    }
-
-                </ScrollView>
+                    )
+                )}
             </View>
-            {
-                cartState.cartItems.length > 0 && (
-                    <View style={styles.checkOutBtn}>
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            <Text style={{ color: "#6c6c6c", fontSize: 14, marginRight: 10 }}>Total (ex. tax)</Text>
-                            <Text style={{ color: "#1788F0", fontSize: 20, fontWeight: "700" }}>{route.params.currency} {Number(cartState.totalAmout.totalAmout).toFixed(2)}</Text>
+            
+            {cartState.cartItems.length > 0 && (
+                <View style={styles.footer}>
+                    <View style={styles.footerContent}>
+                        <View style={styles.totalContainer}>
+                            <Text style={styles.totalLabel}>Total (ex. tax)</Text>
+                            <Text style={styles.totalAmount}>
+                                {route.params.currency} {Number(cartState.totalAmout.totalAmout).toFixed(2)}
+                            </Text>
                         </View>
-                        <View>
-                            <TouchableOpacity style={styles.btnCheckout} onPress={handleNext}>
-                                <Text style={{ color: "#FFF", fontSize: 16 }}>Next</Text>
-                            </TouchableOpacity>
-                        </View>
+                        
+                        <TouchableOpacity 
+                            style={[
+                                styles.nextButton,
+                                !customerContactId && styles.nextButtonDisabled
+                            ]} 
+                            onPress={handleNext}
+                            disabled={!customerContactId}
+                        >
+                            <Text style={styles.nextButtonText}>Next</Text>
+                            <Icon name="arrowright" size={18} color="#FFF" style={styles.nextButtonIcon} />
+                        </TouchableOpacity>
                     </View>
-                )
-            }
+                </View>
+            )}
         </SafeAreaView>
     )
 }
 
 export default Contact;
 
-var styles = StyleSheet.create({
-    mainWrapper: {
+const styles = StyleSheet.create({
+    safeArea: {
         flex: 1,
-        //alignItems: "center",
+        backgroundColor: '#F8F9FA',
+    },
+    container: {
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingTop: 20,
+    },
+    headerInfo: {
+        marginTop: 10,
+        marginBottom: 15,
+    },
+    headerInfoText: {
+        fontSize: 14,
+        color: '#7F8C8D',
+        textAlign: 'center',
+    },
+    contactsList: {
+        paddingBottom: 20,
+    },
+    contactCard: {
         backgroundColor: '#FFF',
-        paddingTop: 30,
-        paddingBottom: 10,
-        paddingHorizontal: 20
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
-    // Heading: {
-    //     fontSize: 26,
-    //     fontWeight: "500",
-    //     color: "#252525",
-    //     textAlign: "center"
-    // },
-    RadioButtonRow: {
-        flexDirection: "row",
-        alignItems: "center"
+    selectedContactCard: {
+        borderColor: '#1788F0',
+        shadowColor: '#1788F0',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    singleRadioBtn: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        alignItems: "center",
-        position: "relative",
-        backgroundColor: "#FFF",
-        borderRadius: 15,
-        paddingHorizontal: 35,
-        paddingVertical: 12,
-        marginBottom: 15
+    primaryBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 12,
+        backgroundColor: '#fff',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        zIndex: 10,
+    },
+    primaryBadgeText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    radioContainer: {
+        marginRight: 12,
+        paddingTop: 2,
     },
     circle: {
-        height: 24,
-        width: 24,
-        borderRadius: 20,
+        height: 22,
+        width: 22,
+        borderRadius: 11,
         borderWidth: 2,
-        borderColor: '#aeaeae',
+        borderColor: '#BDC3C7',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 6,
-        position: "absolute",
-        left: 10,
-        top: 17
     },
     checkedCircle: {
-        width: 14,
-        height: 14,
-        borderRadius: 15,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
         backgroundColor: '#1788F0',
     },
-    btnSubmit: {
-        width: "46%",
-        height: 42,
-        alignItems: "center",
-        backgroundColor: "#1788F0",
-        borderRadius: 30,
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 30,
-        padding: 5,
-        marginHorizontal: "2%"
+    contactInfo: {
+        flex: 1,
     },
-    btnSubmitText: {
-        color: '#FFF',
+    contactName: {
         fontSize: 16,
-        fontWeight: "500",
-        textTransform: "uppercase"
+        fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: 8,
     },
-    checkOutBtn: {
-        backgroundColor: "rgba(255,255,255,0.6)",
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderTopColor: "#dfdfdf",
+    contactDetail: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    contactIcon: {
+        marginRight: 8,
+    },
+    contactText: {
+        fontSize: 14,
+        color: '#7F8C8D',
+        flex: 1,
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    emptyStateText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#95A5A6',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    emptyStateSubText: {
+        fontSize: 14,
+        color: '#BDC3C7',
+        textAlign: 'center',
+        paddingHorizontal: 40,
+    },
+    footer: {
+        backgroundColor: '#FFF',
         borderTopWidth: 1,
-        borderStyle: "solid"
+        borderTopColor: '#E0E6ED',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
-    btnCheckout: {
-        backgroundColor: "#1788F0",
-        borderRadius: 35,
-        paddingVertical: 10,
-        paddingHorizontal: 25
-    }
+    footerContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    totalContainer: {
+        flex: 1,
+    },
+    totalLabel: {
+        fontSize: 14,
+        color: '#7F8C8D',
+        marginBottom: 2,
+    },
+    totalAmount: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1788F0',
+    },
+    nextButton: {
+        backgroundColor: '#1788F0',
+        borderRadius: 25,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        minWidth: 100,
+        justifyContent: 'center',
+    },
+    nextButtonDisabled: {
+        backgroundColor: '#BDC3C7',
+    },
+    nextButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    nextButtonIcon: {
+        marginLeft: 8,
+    },
+    toastContainer: {
+        position: 'absolute',
+        bottom: 30,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(39, 174, 96, 0.9)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+        zIndex: 1000,
+    },
+    toastText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+    },
 });

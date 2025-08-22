@@ -1,27 +1,17 @@
 import React from 'react';
-import {
-  Alert,
-  BackHandler,
-  Linking,
-} from 'react-native';
-
+import { Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Cart from './Cart';
-import SalesOrder from './SalesOrder';
-import SalesOrderDetails from './SalesOrderDetails';
-
-//import { VERSION_CHECK_API_URL } from "@env";
-import { VERSION_CHECK_API_URL } from '../config/constant';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import VersionCheck from 'react-native-version-check';
 import { useDispatch, useSelector } from 'react-redux';
 import { doLogout } from '../Redux/Actions/AuthActions';
-import BillToScreen from './BillToScreen';
+
+// Import all screens
+import Cart from './sales-quote/Cart';
+import SalesOrder from './SalesOrder/SalesOrder';
+import SalesOrderDetails from './SalesOrder/SalesOrderDetails';
 import AllActivity from './Lead/AddActivity';
 import AllActivities from './Lead/AllActivities';
 import LeadCompany from './Lead/Company';
@@ -29,12 +19,10 @@ import LeadContact from './Lead/Contact';
 import LeadDetails from './Lead/Details';
 import LeadSearch from './Lead/Search';
 import LeadSearchList from './Lead/SearchList';
-import RemarksScreen from './RemarksScreen';
 import Operations from './ResourceTransaction/Operations';
 import WorkorderSearch from './ResourceTransaction/WorkorderSearch';
-import ShipToScreen from './ShipToScreen';
-import Privacy from './account/privacy-policy';
 import Settings from './account/setting';
+import Privacy from './account/privacy-policy';
 import Terms from './account/terms';
 import BillAddress from './sales-quote/BillAddress';
 import Contact from './sales-quote/Contact';
@@ -56,318 +44,121 @@ import DeliveryRoot from './DeliveryStack';
 import CameraScreen from './DeliveryStack/cameraScreen';
 import SignatureScreen from './DeliveryStack/signatureScreen';
 import ConfirmOrder from './DeliveryStack/confirmOrder';
+import BillingShippingAddress from './Common/BillingShipping';
 
 
 
+// Create navigators
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const OrderStack = createNativeStackNavigator();
 const CartStack = createNativeStackNavigator();
 const LeadStack = createNativeStackNavigator();
 const SalesQuoteStack = createNativeStackNavigator();
-const WorkOrderStack = createNativeStackNavigator();
 const ResourceStack = createNativeStackNavigator();
 const QuoteStack = createNativeStackNavigator();
 const AccountStack = createNativeStackNavigator();
+const DeliveryStack = createNativeStackNavigator();
+const CommonStack = createNativeStackNavigator();
 
-console.log('Loaded TabScreen');
 
-const SalesOrderScreen = ({ }) => (
+
+// Stack Navigators
+const SalesOrderScreen = () => (
   <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-    <HomeStack.Screen
-      name="Organization"
-      component={Organization}
-      screenOptions={{ headerShown: false }}
-    />
-    <HomeStack.Screen
-      name="CustPendingInvoices"
-      component={CustPendingInvoices}
-      screenOptions={{ headerShown: false }}
-    />
-    <HomeStack.Screen
-      name="SearchProducts"
-      component={SearchProducts}
-      screenOptions={{ headerShown: false }}
-    />
-
-    <HomeStack.Screen
-      name="SalesOrderCart"
-      component={SalesOrderCartStackScreens}
-      screenOptions={{ headerShown: false }}
-    />
+    <HomeStack.Screen name="Organization" component={Organization} />
+    <HomeStack.Screen name="CustPendingInvoices" component={CustPendingInvoices} />
+    <HomeStack.Screen name="SearchProducts" component={SearchProducts} />
+    <HomeStack.Screen name="SalesOrderCart" component={SalesOrderCartStackScreens} />
+    <HomeStack.Screen name="BillingShippingAddress" component={BillingShippingAddress} />
+    <CartStack.Screen name="SalesOrderRemarks" component={SalesOrderRemarksScreen} />
   </HomeStack.Navigator>
 );
 
-// For Sales Order
-const SalesOrderCartStackScreens = ({ navigation }) => (
-  <CartStack.Navigator
-    initialRouteName="Cartscreen"
-    screenOptions={{ headerShown: false }}>
+const SalesOrderCartStackScreens = () => (
+  <CartStack.Navigator screenOptions={{ headerShown: false }}>
     <CartStack.Screen name="Cartscreen" component={SalesOrderCart} />
-    <CartStack.Screen
-      name="ShipAdd"
-      component={ShipAddress}
-      screenOptions={{ headerShown: false }}
-    />
-    <CartStack.Screen
-      name="Address"
-      component={BillAddress}
-      screenOptions={{ headerShown: false }}
-    />
-    <CartStack.Screen
-      name="SalesOrderRemarks"
-      component={SalesOrderRemarksScreen}
-      screenOptions={{ headerShown: false }}
-    />
+    <CartStack.Screen name="ShipAdd" component={ShipAddress} />
+    <CartStack.Screen name="Address" component={BillAddress} />
+    
   </CartStack.Navigator>
 );
-// For Sales Order
 
-const OrderStackScreens = ({ navigation }) => (
+const OrderStackScreens = () => (
   <OrderStack.Navigator screenOptions={{ headerShown: false }}>
-    <OrderStack.Screen
-      name="Sales-order"
-      component={SalesOrder}
-      screenOptions={{ headerShown: false }}
-    />
-    <OrderStack.Screen
-      name="Sales-order-details"
-      component={SalesOrderDetails}
-      screenOptions={{ headerShown: false }}
-    />
+    <OrderStack.Screen name="Sales-order" component={SalesOrder} />
+    <OrderStack.Screen name="Sales-order-details" component={SalesOrderDetails} />
   </OrderStack.Navigator>
 );
 
-const CartStackScreens = ({ navigation }) => (
-  <CartStack.Navigator
-    initialRouteName="Cartscreen"
-    screenOptions={{ headerShown: false }}>
-    <CartStack.Screen name="Cartscreen" component={Cart} />
-    <CartStack.Screen
-      name="Address"
-      component={BillAddress}
-      screenOptions={{ headerShown: false }}
-    />
-    <CartStack.Screen
-      name="ShipAdd"
-      component={ShipAddress}
-      screenOptions={{ headerShown: false }}
-    />
-
-    <CartStack.Screen
-      name="Contact"
-      component={Contact}
-      screenOptions={{ headerShown: false }}
-    />
-
-    <CartStack.Screen
-      name="Billto"
-      component={BillToScreen}
-      screenOptions={{ headerShown: false }}
-    />
-    <CartStack.Screen
-      name="Shipto"
-      component={ShipToScreen}
-      screenOptions={{ headerShown: false }}
-    />
-    <CartStack.Screen
-      name="Remarks"
-      component={RemarksScreen}
-      screenOptions={{ headerShown: false }}
-    />
-  </CartStack.Navigator>
-);
-const LeadStackScreens = ({ navigation }) => (
+const LeadStackScreens = () => (
   <LeadStack.Navigator screenOptions={{ headerShown: false }}>
-    <LeadStack.Screen
-      name="Search"
-      component={LeadSearch}
-      screenOptions={{ headerShown: false }}
-    />
-
-    <LeadStack.Screen
-      name="Company"
-      component={LeadCompany}
-      screenOptions={{ headerShown: false }}
-    />
-    <LeadStack.Screen
-      name="Contact"
-      component={LeadContact}
-      screenOptions={{ headerShown: false }}
-    />
-    <LeadStack.Screen
-      name="SearchList"
-      component={LeadSearchList}
-      screenOptions={{ headerShown: false }}
-    />
-    <LeadStack.Screen
-      name="Details"
-      component={LeadDetails}
-      screenOptions={{ headerShown: false }}
-    />
-    <LeadStack.Screen
-      name="AllActivities"
-      component={AllActivities}
-      screenOptions={{ headerShown: false }}
-    />
-    <LeadStack.Screen
-      name="AddActivity"
-      component={AllActivity}
-      screenOptions={{ headerShown: false }}
-    />
+    <LeadStack.Screen name="Search" component={LeadSearch} />
+    <LeadStack.Screen name="Company" component={LeadCompany} />
+    <LeadStack.Screen name="Contact" component={LeadContact} />
+    <LeadStack.Screen name="SearchList" component={LeadSearchList} />
+    <LeadStack.Screen name="Details" component={LeadDetails} />
+    <LeadStack.Screen name="AllActivities" component={AllActivities} />
+    <LeadStack.Screen name="AddActivity" component={AllActivity} />
   </LeadStack.Navigator>
 );
 
-const SalesQuoteStackScreens = ({ navigation }) => (
+const SalesQuoteStackScreens = () => (
   <SalesQuoteStack.Navigator screenOptions={{ headerShown: false }}>
-    <SalesQuoteStack.Screen
-      name="OrgCustomerSearch"
-      component={OrgCustomerSearch}
-      screenOptions={{ headerShown: false }}
-    />
-    <SalesQuoteStack.Screen
-      name="SearchProducts"
-      component={SearchProducts}
-      screenOptions={{ headerShown: false }}
-    />
-    <SalesQuoteStack.Screen
-      name="QuoteDescription"
-      component={QuoteDescription}
-      screenOptions={{ headerShown: false }}
-    />
-    {/* New screens */}
-    <SalesQuoteStack.Screen
-      name="searchLeadCustomerScreen"
-      component={CustomerLeadSearchScreen}
-      screenOptions={{ headerShown: false }}
-    />
-    <SalesQuoteStack.Screen
-      name="Products"
-      component={Products}
-      screenOptions={{ headerShown: false }}
-    />
-    <SalesQuoteStack.Screen
-      name="Cart"
-      component={CartStackScreens}
-      screenOptions={{ headerShown: false }}
-    />
-    <SalesQuoteStack.Screen
-      name="SalesOrderTerms"
-      component={TermsCondition}
-      screenOptions={{ headerShown: false }}
-    />
+    <SalesQuoteStack.Screen name="OrgCustomerSearch" component={OrgCustomerSearch} />
+    <SalesQuoteStack.Screen name="SearchProducts" component={SearchProducts} />
+    <SalesQuoteStack.Screen name="QuoteDescription" component={QuoteDescription} />
+    <SalesQuoteStack.Screen name="searchLeadCustomerScreen" component={CustomerLeadSearchScreen} />
+    <SalesQuoteStack.Screen name="Products" component={Products} />
+    <SalesQuoteStack.Screen name="Cart" component={CartStackScreens} />
+    <SalesQuoteStack.Screen name="BillingShippingAddress" component={BillingShippingAddress} />
+    <SalesQuoteStack.Screen name="Contact" component={Contact} />
+    <SalesQuoteStack.Screen name="SalesOrderTerms" component={TermsCondition} />
   </SalesQuoteStack.Navigator>
 );
 
-const QuoteStackScreens = ({ navigation }) => (
+const QuoteStackScreens = () => (
   <QuoteStack.Navigator screenOptions={{ headerShown: false }}>
-    <OrderStack.Screen
-      name="SalesQuotes"
-      component={SalesQuotes}
-      screenOptions={{ headerShown: false }}
-    />
-    <QuoteStack.Screen
-      name="SalesQuoteDetails"
-      component={SalesQuoteDetails}
-      screenOptions={{ headerShown: false }}
-    />
+    <QuoteStack.Screen name="SalesQuotes" component={SalesQuotes} />
+    <QuoteStack.Screen name="SalesQuoteDetails" component={SalesQuoteDetails} />
   </QuoteStack.Navigator>
 );
 
-const ResourceStackScreens = ({ navigation }) => (
+const ResourceStackScreens = () => (
   <ResourceStack.Navigator screenOptions={{ headerShown: false }}>
-
-    {/* <ResourceStack.Screen
-      name="ResourceTransactionSearch"
-      component={ResourceTransactionSearch}
-      screenOptions={{ headerShown: false }}
-    />
-    <ResourceStack.Screen
-      name="ResourceTransactionList"
-      component={ResourceTransactionList}
-      screenOptions={{ headerShown: false }}
-    />
-    <ResourceStack.Screen
-      name="ResourceTransactionDetaile"
-      component={ResourceTransactionDetaile}
-      screenOptions={{ headerShown: false }}
-    />
-    <ResourceStack.Screen
-      name="AddResourceTransaction"
-      component={AddResourceTransaction}
-      screenOptions={{ headerShown: false }}
-    /> */}
-
-
-    {/* New screen */}
-    <ResourceStack.Screen
-      name="WorkorderSearch"
-      component={WorkorderSearch}
-      screenOptions={{ headerShown: false }}
-    />
-    <ResourceStack.Screen
-      name="WorkOrderList"
-      component={WorkOrderList}
-      screenOptions={{ headerShown: false }}
-    />
-
-    <ResourceStack.Screen
-      name="Operations"
-      component={Operations}
-      screenOptions={{ headerShown: false }}
-    />
-
+    <ResourceStack.Screen name="WorkorderSearch" component={WorkorderSearch} />
+    <ResourceStack.Screen name="WorkOrderList" component={WorkOrderList} />
+    <ResourceStack.Screen name="Operations" component={Operations} />
   </ResourceStack.Navigator>
 );
 
-const AccountStackScreens = ({ navigation }) => (
+const DeliveryStackScreens = () => (
+  <DeliveryStack.Navigator screenOptions={{ headerShown: false }}>
+    <DeliveryStack.Screen name="Delivery" component={DeliveryRoot} />
+    <DeliveryStack.Screen name="CameraScreen" component={CameraScreen} />
+    <DeliveryStack.Screen name="SignatureScreen" component={SignatureScreen} />
+    <DeliveryStack.Screen name="ConfirmOrder" component={ConfirmOrder} />
+  </DeliveryStack.Navigator>
+);
+
+const AccountStackScreens = () => (
   <AccountStack.Navigator screenOptions={{ headerShown: false }}>
-
-    <AccountStack.Screen
-      name="Settings"
-      component={Settings}
-      screenOptions={{ headerShown: false }}
-    />
-    <AccountStack.Screen
-      name="Privacy"
-      component={Privacy}
-      screenOptions={{ headerShown: false }}
-    />
-    <AccountStack.Screen
-      name="Terms"
-      component={Terms}
-      screenOptions={{ headerShown: false }}
-    />
-
+    <AccountStack.Screen name="Settings" component={Settings} />
+    <AccountStack.Screen name="Privacy" component={Privacy} />
+    <AccountStack.Screen name="Terms" component={Terms} />
   </AccountStack.Navigator>
 );
 
-const DeliveryStackScreens = ({ navigation }) => (
-  <AccountStack.Navigator screenOptions={{ headerShown: false }}>
-    <AccountStack.Screen
-      name="Delivery"
-      component={DeliveryRoot}
-      screenOptions={{ headerShown: false }}
-    />
-    <AccountStack.Screen 
-        name="CameraScreen" 
-        component={CameraScreen} 
-        options={{ headerShown: false }}
-    />
-    <AccountStack.Screen 
-        name="SignatureScreen" 
-        component={SignatureScreen} 
-        options={{ headerShown: false }}
-      />
-    <AccountStack.Screen 
-        name="ConfirmOrder" 
-        component={ConfirmOrder} 
-        options={{ headerShown: false }}
-    />
-  </AccountStack.Navigator>
+const CartStackScreens = () => (
+  <CartStack.Navigator screenOptions={{ headerShown: false }}>
+    <CartStack.Screen name="Cartscreen" component={Cart} />
+    <CartStack.Screen name="Address" component={BillAddress} />
+    <CartStack.Screen name="ShipAdd" component={ShipAddress} />
+    
+  </CartStack.Navigator>
 );
 
-const TabScreen = ({ route }) => {
+const TabNavigator = ({ route }) => {
   const dispatch = useDispatch();
   const cartState = useSelector(state => state.CartReducer);
 
@@ -375,198 +166,128 @@ const TabScreen = ({ route }) => {
     try {
       await AsyncStorage.removeItem('uuid');
     } catch (e) {
-      // remove error
+      console.error('Error removing uuid:', e);
     }
   };
 
-  let alertPresent = false;
+  const handleLogout = () => {
+    Alert.alert('Do you really want to sign out?', '', [
+      { text: 'No' },
+      {
+        text: 'Yes',
+        onPress: () => {
+          removeLocalStore();
+          dispatch(doLogout());
+        },
+      },
+    ]);
+  };
 
-  const updatePress = async () => {
-    alertPresent = false;
-  }
-
-  const updateCheck = async (routeName, navigation) => {
-    // try {
-    //   const response = await axios.get(VERSION_CHECK_API_URL, {
-    //     headers: {
-    //       "X-Access-Token": "wSsVR61wrET5CPgsz2esIukxn1gBUgzyEEx"
-    //     }
-    //   });
-
-    //   const latestVersion = Platform.OS === 'ios' ? response?.data?.data?.ios_version : response?.data?.data?.android_version;
-    //   const currentVersion = VersionCheck.getCurrentVersion();
-
-     
-    // } catch (error) {
-    //   console.error('Error checking version:', error);
-    // }
+  const getMainComponent = () => {
+    switch(route.params.access) {
+      case '1': return SalesOrderScreen;
+      case '2': return ResourceStackScreens;
+      case '3': return SalesQuoteStackScreens;
+      case '4': return LeadStackScreens;
+      case '5': return ResourceStackScreens;
+      case '6': return DeliveryStackScreens;
+      default: return SalesOrderScreen;
+    }
   };
 
   return (
     <Tab.Navigator
       screenOptions={{
+        tabBarActiveTintColor: '#1788F0',
+        tabBarInactiveTintColor: '#626F7F',
         tabBarLabelStyle: {
-          fontSize: 14,
+          fontSize: 12,
+          paddingBottom: 4,
         },
         tabBarStyle: {
           height: 60,
-          paddingBottom: 5,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         headerShown: false,
-      }}>
+      }}
+      backBehavior="history"
+    >
       <Tab.Screen
-        name="Main"
-        component={
-          route.params.access == '1'
-            ? SalesOrderScreen
-            : route.params.access == '2'
-              ? WorkOrderStackScreens
-              : route.params.access == '3'
-                ? SalesQuoteStackScreens
-                : route.params.access == '4'
-                  ? LeadStackScreens
-                  : route.params.access == '5'
-                    ? ResourceStackScreens
-                    : route.params.access == '6' ? DeliveryStackScreens : SalesOrderScreen
-        }
-        options={({ route }) => ({
+        name="HomeTab"
+        component={getMainComponent()}
+        options={{
           tabBarLabel: 'Home',
-          tabBarColor: '#FFFFFF',
-          //tabBarStyle: {display: 'none'},
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="home" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Icon name="home" color={color} size={24} />
           ),
-        })}
-        listeners={({ navigation }) => ({
-          tabPress: async e => {
-            e.preventDefault(); // Stop default navigation action
-            dispatch({ type: 'SALES_ORDER_SUBMIT_RESET' });
-            dispatch({ type: "RESET_CART_DATA" });
-            await updateCheck('service', navigation); // Wait for the version check to complete
-          },
-        })}
-      />
-      <Tab.Screen
-        name="Setting"
-        component={AccountStackScreens}
-        options={({ route }) => ({
-          tabBarLabel: 'Setting',
-          tabBarColor: '#FFFFFF',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="setting" color={color} size={size} />
-          ),
-        })}
-        listeners={({ navigation }) => ({
-          tabPress: async e => {
-            e.preventDefault(); // Stop default navigation action
-            await updateCheck('Setting', navigation); // Wait for the version check to complete
-          },
-        })}
+        }}
       />
 
-      {/* {route.params.access == '1' && (
+      {(route.params.access === '1' || route.params.access === '3') && (
         <Tab.Screen
-          name="Cart"
+          name="CartTab"
           component={CartStackScreens}
-          options={({ route }) => ({
-            tabBarInactiveTintColor: '#515151',
+          options={{
             tabBarLabel: 'Cart',
-            tabBarColor: '#FFFFFF',
-            // tabBarStyle: {display: 'none'},
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="shoppingcart" color={color} size={size} />
+            tabBarIcon: ({ color }) => (
+              <Icon name="shoppingcart" color={color} size={24} />
             ),
-            tabBarBadgeStyle: { opacity: cartState.cartItems.length > 0 ? 1 : 0 },
-            tabBarBadge: cartState.cartItems.length,
-          })}
-          listeners={({ navigation, route }) => ({
-            tabPress: e => {
-              navigation.navigate('Cart');
-              dispatch({ type: 'SALES_ORDER_SUBMIT_RESET' });
-            },
-          })}
+            tabBarBadge: cartState.cartItems.length || undefined,
+          }}
         />
       )}
-      {route.params.access == '3' && (
+
+      {route.params.access === '3' && (
         <Tab.Screen
-          name="Cart"
-          component={CartStackScreens}
-          options={({ route }) => ({
-            tabBarInactiveTintColor: '#515151',
-            tabBarLabel: 'Cart',
-            tabBarColor: '#FFFFFF',
-            // tabBarStyle: {display: 'none'},
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="shoppingcart" color={color} size={size} />
-            ),
-            tabBarBadgeStyle: { opacity: cartState.cartItems.length > 0 ? 1 : 0 },
-            tabBarBadge: cartState.cartItems.length,
-          })}
-          listeners={({ navigation, route }) => ({
-            tabPress: e => {
-              navigation.navigate('Cart');
-              dispatch({ type: 'SALES_ORDER_SUBMIT_RESET' });
-            },
-          })}
-        />
-      )} */}
-      {route.params.access == '3' && (
-        <Tab.Screen
-          name="Quote"
+          name="QuoteTab"
           component={QuoteStackScreens}
-          options={({ route }) => ({
+          options={{
             tabBarLabel: 'Quote',
-            tabBarColor: '#FFFFFF',
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons
-                name="account"
-                color={color}
-                size={size}
-              />
+            tabBarIcon: ({ color }) => (
+              <MaterialCommunityIcons name="account" color={color} size={24} />
             ),
-          })}
+          }}
         />
       )}
-      {route.params.access == '1' && (
+
+      {route.params.access === '1' && (
         <Tab.Screen
-          name="Order"
+          name="OrderTab"
           component={OrderStackScreens}
-          options={({ route }) => ({
+          options={{
             tabBarLabel: 'Orders',
-            tabBarColor: '#FFFFFF',
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons
-                name="account"
-                color={color}
-                size={size}
-              />
+            tabBarIcon: ({ color }) => (
+              <MaterialCommunityIcons name="account" color={color} size={24} />
             ),
-          })}
+          }}
         />
       )}
 
       <Tab.Screen
-        name="You"
-        component={SalesOrderScreen}
-        options={({ route }) => ({
-          tabBarLabel: 'Sign Out',
-          tabBarColor: '#FFFFFF',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="logout" color={color} size={size} />
+        name="SettingsTab"
+        component={AccountStackScreens}
+        options={{
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Icon name="setting" color={color} size={24} />
           ),
-        })}
-        listeners={({ navigation, route }) => ({
-          tabPress: e => {
+        }}
+      />
+
+      <Tab.Screen
+        name="LogoutTab"
+        component={SalesOrderScreen}
+        options={{
+          tabBarLabel: 'Sign Out',
+          tabBarIcon: ({ color }) => (
+            <Icon name="logout" color={color} size={24} />
+          ),
+        }}
+        listeners={() => ({
+          tabPress: (e) => {
             e.preventDefault();
-            Alert.alert('Do you really want to sign out?', '', [
-              { text: 'No', onPress: () => console.log('logout') },
-              {
-                text: 'Yes',
-                onPress: () => {
-                  removeLocalStore(), dispatch(doLogout());
-                },
-              },
-            ]);
+            handleLogout();
           },
         })}
       />
@@ -574,4 +295,4 @@ const TabScreen = ({ route }) => {
   );
 };
 
-export default TabScreen;
+export default TabNavigator;

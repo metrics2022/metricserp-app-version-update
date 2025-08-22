@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     View,
-    ActivityIndicator,
     TouchableOpacity,
-    Image,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { leadDetailsAction } from '../../Redux/Actions/LeadSubmitAction';
-import HeaderTextCenter from '../../Component/HeaderTextCenter';
-import AlertComponent from '../../Component/AlertComponent';
 import HeaderTextLeftRight from '../../Component/HeaderTextLeftRight';
-
+import AlertComponent from '../../Component/AlertComponent';
+import Icon from 'react-native-vector-icons/AntDesign';
+import LogoOverlay from '../../Component/LoaderComponent';
 
 const LeadDetails = ({ navigation, route }) => {
     const state = useSelector((state) => state.SearchLead);
@@ -27,6 +25,7 @@ const LeadDetails = ({ navigation, route }) => {
         dispatch({ type: "LEAD_SUBMIT_RESET" });
         navigation.navigate('Search');
     };
+
     useEffect(() => {
         if (state?.errorMessage?.data == '4') {
             AlertComponent({
@@ -34,12 +33,10 @@ const LeadDetails = ({ navigation, route }) => {
                 message: '',
                 buttons: [
                     { text: 'ok', onPress: () => onOkPress() },
-
                 ]
             });
         }
-    }, [state?.errorMessage])
-
+    }, [state?.errorMessage]);
 
     useEffect(() => {
         dispatch(leadDetailsAction(route?.params?.leads_id));
@@ -47,172 +44,153 @@ const LeadDetails = ({ navigation, route }) => {
 
     useEffect(() => {
         if (state) {
-            setData(state?.leadDetails)
+            setData(state?.leadDetails);
         }
-    }, [state])
+    }, [state]);
 
     const readItemFromStorage = async () => {
         try {
-            const jsonValue = await AsyncStorage.getItem('uuid')
-            return jsonValue != null ? JSON.parse(jsonValue) : null
+            const jsonValue = await AsyncStorage.getItem('uuid');
+            return jsonValue != null ? JSON.parse(jsonValue) : null;
         } catch (e) {
-            // read error
+            console.error(e);
         }
-    }
+    };
 
     useEffect(() => {
         readItemFromStorage().then((value) => { setGetGlobalData(value) });
-
     }, []);
-    const goBack = () => {
-        navigation.goBack()
-    }
 
-    //console.log('data',route?.params?.leads_id)
+    const goBack = () => {
+        navigation.goBack();
+    };
+
+    const renderDetailRow = (label, value, iconName) => {
+        return (
+            <View style={styles.detailRow}>
+                <View style={styles.labelContainer}>
+                    {iconName && <Icon name={iconName} size={16} color="#1788F0" style={styles.icon} />}
+                    <Text style={styles.labelText}>{label}</Text>
+                </View>
+                <Text style={styles.valueText}>{value || 'N/A'}</Text>
+            </View>
+        );
+    };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            {
-                state.isLoading && (
-                    <View style={{ flex: 1, position: "absolute", zIndex: 2, left: 0, width: "100%", justifyContent: "center", height: "100%", justifyContent: 'center', alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)" }}>
-                        <View style={{
-                            paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5
-                        }}>
-                            <Image source={require('../../assets/logoSmall.png')} style={{ width: 45, height: 45, resizeMode: "cover" }} />
-                        </View>
-                    </View>
-                )
-            }
+        <SafeAreaView style={styles.container}>
+            {state.isLoading && (
+                <LogoOverlay />
+            )}
 
             <View style={styles.mainWrapper}>
-                <HeaderTextLeftRight title={"Lead Details"} goBack={goBack} fontSize={25} component={
-                    <TouchableOpacity
-                    style={styles.btn}
-                    onPress={async () => {
-                      try {
-                        await AsyncStorage.setItem('leads_id', JSON.stringify(data.leads_id));
-                        navigation.navigate('AllActivities', {
-                          companyInfo: data,
-                        });
-                      } catch (error) {
-                        console.error('Error saving leads_id:', error);
-                      }
-                    }}
-                  >
-                    <Text style={{ color: '#FFF', fontSize: 10 }}>ACTIVITIES</Text>
-                  </TouchableOpacity>
-                  }
-                 
+                <HeaderTextLeftRight
+                    title={"Lead Details"}
+                    goBack={goBack}
+                    fontSize={20}
+                    component={
+                        <TouchableOpacity
+                            style={styles.activitiesButton}
+                            onPress={async () => {
+                                try {
+                                    await AsyncStorage.setItem('leads_id', JSON.stringify(data.leads_id));
+                                    navigation.navigate('AllActivities', {
+                                        companyInfo: data,
+                                    });
+                                } catch (error) {
+                                    console.error('Error saving leads_id:', error);
+                                }
+                            }}
+                        >
+                            <Text style={styles.activitiesButtonText}>ACTIVITIES</Text>
+                        </TouchableOpacity>
+                    }
                 />
-                <ScrollView>
-                    <View style={{ borderRadius: 10, overflow: "hidden", backgroundColor: "#F9F9F9" }}>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Name</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.name}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Gender</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.gender}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Date Of Birth</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.date_of_birth}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Company</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.company}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Phone Number</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.country_phone_code + + data?.phonenumber?.replace(/\s+/g, '')}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Email</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.email}</Text>
-                        </View>
-                    </View>
-                </ScrollView>
-            </View>
-        </ SafeAreaView >
-    )
-}
 
-var styles = StyleSheet.create({
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <View style={styles.detailsCard}>
+                        <View style={styles.cardAccent} />
+                        {renderDetailRow("Name", data?.name, "user")}
+                        {renderDetailRow("Gender", data?.gender, "idcard")}
+                        {renderDetailRow("Date Of Birth", data?.date_of_birth, "calendar")}
+                        {renderDetailRow("Company", data?.company, "isv")}
+                        {renderDetailRow("Phone Number", data?.country_phone_code + data?.phonenumber?.replace(/\s+/g, ''), "phone")}
+                        {renderDetailRow("Email", data?.email, "mail")}
+                    </View>
+               </ScrollView>
+            </View>
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F6F7FB', // soft light background
+    },
     mainWrapper: {
         flex: 1,
-        backgroundColor: '#FFF',
-        paddingTop: 30,
-        paddingBottom: 10,
-        paddingHorizontal: 20
+        paddingTop: 30, // header already has padding
+        paddingHorizontal: 20,
     },
-    Row: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingBottom: 15,
-        borderBottomColor: "#e1e1e1",
+    scrollContent: {
+        paddingBottom: 20,
+    },
+     detailsCard: {
+        backgroundColor: "#FFF",
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        overflow: 'hidden',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+    },
+    cardAccent: {
+        height: 5,
+        backgroundColor: "#1788F0", // accent strip
+    },
+    detailRow: {
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
-        borderStyle: "solid",
-        marginBottom: 15
+        borderBottomColor: '#f0f4fa', // subtle bluish divider
     },
-    line: {
-        width: 50,
-        height: 4,
-        backgroundColor: "#1788F0",
-        borderRadius: 3,
-        marginTop: 10
+    labelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
     },
-    Heading: {
-        fontSize: 26,
-        fontWeight: "500",
-        color: "#252525",
-        textAlign: "center"
+    icon: {
+        marginRight: 10,
+        color: "#1788F0",
     },
-    para: {
+    labelText: {
+        color: "#1788F0", // blue labels
         fontSize: 14,
-        color: "#000",
-        fontWeight: "400",
-        marginBottom: 15
+        fontWeight: "600",
     },
-    price: {
-        position: "absolute",
-        top: 0,
-        right: 10,
-        color: "#000"
+    valueText: {
+        color: "#333",
+        fontSize: 15,
+        marginLeft: 26,
     },
-    Label: {
-        backgroundColor: "#F2F1F8",
-        paddingHorizontal: 14,
-        paddingVertical: 8
-    },
-    Desc: {
-        paddingHorizontal: 14,
-        paddingVertical: 10
-    },
-    btn:{
-        width:90,
-        backgroundColor: "#3b5998",
-        borderRadius: 30,
-        flexDirection: "row",
-        justifyContent: "center",
+    activitiesButton: {
+        backgroundColor: "#1788F0",
+        borderRadius: 20,
+        paddingVertical: 8,
         paddingHorizontal: 15,
-        paddingVertical: 10,
-        position: "absolute",
-        top:0,
-        right:0,
-        zIndex: 3,
-        borderRadius: 30
-    }
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    activitiesButtonText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '600',
+    },
 });
-export default LeadDetails
+
+export default LeadDetails;

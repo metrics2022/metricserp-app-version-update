@@ -1,6 +1,6 @@
 import { ALL_ORGANIZATION_REQUEST, ALL_ORGANIZATION_SUCCESS, ALL_ORGANIZATION_FAILURE } from '../constants';
 import axios from "axios";
-import {API_URL, API_KEY, AUTH_KEY} from "@env"
+import { API_URL } from '../../config/constant';
 import { getMyLocalData } from '../../config/getLocalStorageData';
 
 
@@ -30,6 +30,6 @@ export const AllOrganizationAction = (payload)=> async (dispatch, getState)=> {
         // console.log('salesOrg', response.data.data);
 
     }catch(error){
-        dispatch({type:ALL_ORGANIZATION_FAILURE, payload:error.response.data})
+        dispatch({type:ALL_ORGANIZATION_FAILURE, payload:error?.response?.data})
     }
 }

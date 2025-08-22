@@ -1,147 +1,97 @@
 import React, { useState, useEffect } from 'react'
 import {
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
-    ActivityIndicator,
     Alert,
-    Animated,
     Modal,
-    Button,
-    TouchableWithoutFeedback,
     Image
 } from 'react-native';
 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-
 import { useDispatch, useSelector } from 'react-redux';
-import { itemIncrement, itemDecrement, removeToCart, cartLineNameChange } from '../../Redux/Actions/SalesOrderCartAction';
-import { SALES_ORDER_TOTAL_AMOUNT } from '../../Redux/constants';
+import { itemIncrement, itemDecrement, removeToCart, cartLineNameChange } from '../../Redux/Actions/cartAction';
+import { TOTAL_AMOUNT } from '../../Redux/constants';
 import { useIsFocused } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/AntDesign';
-import HeaderTextCenter from '../../Component/HeaderTextCenter';
 import HeaderTextLeft from '../../Component/HeaderTextLeft';
 
-
-const SalesOrderCart = ({ navigation, route }) => {
-
-    const cartState = useSelector(state => state.SalesOrderCartReducer);
+const Cart = ({ navigation }) => {
+    const cartState = useSelector(state => state.CartReducer);
     const dispatch = useDispatch();
     const isFocused = useIsFocused();
 
     const [currency, setCurrency] = useState('');
     const [currencyId, setCurrencyId] = useState('');
     const [menuAccess, setMenuAccess] = useState('');
-    const [lineNote, setLineNote] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
-    //const [itemDesc, setItemDesc] = useState('');
     const [itemLineDesc, setItemLineDesc] = useState('');
-    const [lineIndex, setLineIndex] = useState('');
-    const [lineProductId, setLineProductId] = useState('');
-    const [lineProductUom, setLineProductUom] = useState('');
+    const [cartItemId, setCartItemId] = useState('');
 
-
-    const handleOpen = (desc, index) => {
-        //console.log(index)
+    const handleOpen = (item) => {
         setModalVisible(true);
-        const newRoutingData = [...cartState.cartItems];
-
-        const lineDesc = newRoutingData[index].itemLineDesc;
-        setLineProductId(newRoutingData[index].productId);
-        setLineProductUom(newRoutingData[index].uom)
-        setItemLineDesc(lineDesc);
+        setCartItemId(item.cartItemId || '');
+        setItemLineDesc(item.itemLineDesc || '');
     }
 
-    const handleClose = (index) => {
+    const handleClose = () => {
+        if (cartItemId) {
+            dispatch(cartLineNameChange({ cartItemId, itemLineDesc }));
+        }
         setModalVisible(false);
+        setCartItemId('');
+        setItemLineDesc('');
     }
-    //console.log('linedesc',cartState.cartItems[0].itemLineDesc)
-
 
     const getmoduleData = async () => {
         try {
-            //const value = await AsyncStorage.getItem('moduleData')
             const jsonValue1 = await AsyncStorage.getItem('moduleData')
             return jsonValue1 != null ? JSON.parse(jsonValue1) : null
-
-
-        } catch (err) {
-            // console.log(err)
-        }
-
+        } catch (err) {}
     }
+
     useEffect(() => {
         getmoduleData().then((e) => { setMenuAccess(e) });
     }, []);
-
-    //console.log('cartMenu',menuAccess.menu_name)
-
 
     const readItemFromStorage = async () => {
         try {
             const jsonValue = await AsyncStorage.getItem('uuid')
             return jsonValue != null ? JSON.parse(jsonValue) : null
-        } catch (e) {
-            // read error
-        }
+        } catch (e) {}
     }
 
     useEffect(() => {
-        readItemFromStorage().then((e) => { setCurrency(e.currency.currency_code), setCurrencyId(e.currency.currency_id) });
+        readItemFromStorage().then((e) => { 
+            setCurrency(e.currency.currency_code) 
+            setCurrencyId(e.currency.currency_id) 
+        });
     }, []);
 
-
     useEffect(() => {
-        dispatch({ type: SALES_ORDER_TOTAL_AMOUNT });
+        dispatch({ type: TOTAL_AMOUNT });
     }, [cartState.cartItems]);
 
-
-    const checkItemZero = (id) => Alert.alert(
+    const checkItemZero = (index) => Alert.alert(
         "Remove Item",
         "Are you sure you want to remove this item from your cart?",
         [
-            {
-                text: "Cancel",
-                onPress: () => console.log("Cancel Pressed"),
-                style: "cancel"
-            },
-            { 
-                text: "Remove", 
-                onPress: () => handleDecrement(id),
-                style: "destructive"
-            }
+            { text: "Cancel", style: "cancel" },
+            { text: "Remove", onPress: () => dispatch(itemDecrement(index)), style: "destructive" }
         ]
     )
 
-    const handleDeleteItem = (index) => Alert.alert(
-        "Remove Item",
-        "Are you sure you want to remove this item from your cart?",
-        [
-            {
-                text: "Cancel",
-                style: "cancel"
-            },
-            { 
-                text: "Remove", 
-                onPress: () => dispatch(removeToCart(index)),
-                style: "destructive"
-            }
-        ]
-    )
-
-    const handleIncrement = (id) => {
-        dispatch(itemIncrement(id));
+    const handleIncrement = (index) => {
+        dispatch(itemIncrement(index));
     }
-    const handleDecrement = (id) => {
-        dispatch(itemDecrement(id));
+
+    const handleDecrement = (index) => {
+        dispatch(itemDecrement(index));
     }
 
     const goBack = () => {
@@ -151,8 +101,8 @@ const SalesOrderCart = ({ navigation, route }) => {
     return (
         <>
             <View style={styles.mainWrapper}>
-
                 <HeaderTextLeft title={"Cart"} goBack={goBack} fontSize={25} />
+
                 {
                     cartState.cartItems?.length > 0 ? (
                         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
@@ -160,20 +110,17 @@ const SalesOrderCart = ({ navigation, route }) => {
                                 return (
                                     <View style={styles.singleCartProduct} key={index}>
                                         <TouchableOpacity 
-                                            onPress={() => handleDeleteItem(index)} 
+                                            onPress={() => dispatch(removeToCart(index))} 
                                             style={styles.deleteButton}
                                         >
                                             <MaterialIcons size={22} color="red" name="delete-outline" />
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.eachProduct} onPress={() => handleOpen(item.itemLineDesc, index)}>
+
+                                        <TouchableOpacity style={styles.eachProduct} onPress={() => handleOpen(item)}>
                                             {
-                                                item?.itemLineDesc == "" ? <Image
-                                                    source={require('../../assets/file-icon2.png')}
-                                                    style={{ height: 22, width: 22 }}
-                                                /> : <Image
-                                                    source={require('../../assets/file-icon3.png')}
-                                                    style={{ height: 22, width: 22 }}
-                                                />
+                                                item?.itemLineDesc == "" ? 
+                                                <Image source={require('../../assets/file-icon2.png')} style={{ height: 22, width: 22 }} /> 
+                                                : <Image source={require('../../assets/file-icon3.png')} style={{ height: 22, width: 22 }} />
                                             }
                                         </TouchableOpacity>
 
@@ -182,9 +129,9 @@ const SalesOrderCart = ({ navigation, route }) => {
                                             <Text style={styles.productDetails}>{item.uom_name}</Text>
                                             <Text style={styles.productPrice}>{currency} {Number(item.totalPrice).toFixed(2)}</Text>
                                         </View>
+
                                         <View style={styles.quantityContainer}>
                                             <Text style={styles.QtyHeading}>Quantity</Text>
-
                                             <View style={styles.quantityControls}>
                                                 {
                                                     item.product_qty > 1 ? (
@@ -203,7 +150,6 @@ const SalesOrderCart = ({ navigation, route }) => {
                                                         </TouchableOpacity>
                                                     )
                                                 }
-
                                                 <Text style={styles.quantityText}>{Number(item.product_qty)}</Text>
                                                 <TouchableOpacity 
                                                     onPress={() => handleIncrement(index)} 
@@ -221,9 +167,7 @@ const SalesOrderCart = ({ navigation, route }) => {
                         <View style={styles.emptyCartContainer}>
                             <View style={styles.emptyCartContent}>
                                 <View style={styles.emptyCartIcon}>
-                                    <Icon
-                                        name="shoppingcart"
-                                        style={styles.emptyCartIconImage} />
+                                    <Icon name="shoppingcart" style={styles.emptyCartIconImage} />
                                 </View>
                                 <View style={styles.emptyCartText}>
                                     <Text style={styles.emptyCartTitle}>Your Cart is empty!</Text>
@@ -246,19 +190,24 @@ const SalesOrderCart = ({ navigation, route }) => {
                         </View>
                         <TouchableOpacity 
                             style={styles.btnCheckout} 
-                            onPress={() => navigation.navigate('BillingShippingAddress', {
-                                currency: currency,
-                                currencyId: currencyId,
-                                orgId: cartState?.orgId,
-                                module:"salesOrder"
-                            })}
+                            onPress={() => {
+                                if(menuAccess?.menu_name == "Sales Order"){
+                                    navigation.navigate('Billto', {
+                                        currency, currencyId, orgId: cartState?.orgId
+                                    })
+                                } else if(menuAccess?.menu_name == "QUOTE"){
+                                    navigation.navigate('BillingShippingAddress', {
+                                        currency, currencyId, orgId: cartState?.orgId, module:"salesQuote"
+                                    })
+                                }
+                            }}
                         >
                             <Text style={styles.btnCheckoutText}>Next</Text>
                         </TouchableOpacity>
                     </View>
                 )
             }
-            
+
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -267,20 +216,14 @@ const SalesOrderCart = ({ navigation, route }) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalView}>
-                        <TouchableOpacity 
-                            onPress={() => { 
-                                dispatch(cartLineNameChange({ lineProductId, lineProductUom, itemLineDesc })); 
-                                handleClose(); 
-                            }} 
-                            style={styles.modalCloseButton}
-                        >
+                        <TouchableOpacity onPress={handleClose} style={styles.modalCloseButton}>
                             <Icon size={25} color="red" name="closecircle" />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Line Note</Text>
                         <View style={styles.divider}></View>
                         <Text style={styles.modalSubtitle}>Add note</Text>
-                        <TextInput 
-                            placeholder="Type quote description"
+                        <TextInput
+                            placeholder="Type description"
                             editable
                             multiline
                             numberOfLines={5}
@@ -288,15 +231,11 @@ const SalesOrderCart = ({ navigation, route }) => {
                             placeholderTextColor="#a1a1a1"
                             style={styles.noteInput}
                             value={itemLineDesc}
-                            defaultValue={itemLineDesc}
                             onChangeText={(e) => setItemLineDesc(e)}
                         />
                         <TouchableOpacity 
                             style={styles.saveButton} 
-                            onPress={() => { 
-                                dispatch(cartLineNameChange({ lineProductId, lineProductUom, itemLineDesc })); 
-                                handleClose(); 
-                            }}
+                            onPress={handleClose}
                         >
                             <Text style={styles.saveButtonText}>Save</Text>
                         </TouchableOpacity>
@@ -307,7 +246,7 @@ const SalesOrderCart = ({ navigation, route }) => {
     )
 }
 
-export default SalesOrderCart;
+export default Cart;
 
 const styles = StyleSheet.create({
     mainWrapper: {
@@ -325,56 +264,24 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginTop: 16,
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
     },
-    deleteButton: {
-        padding: 4,
-    },
+    deleteButton: { padding: 4 },
     eachProduct: {
         padding: 8,
         backgroundColor: '#FFF',
         borderRadius: 8
     },
-    productInfo: {
-        flex: 1,
-        paddingHorizontal: 8,
-    },
-    productName: {
-        color: "#2C3E50",
-        fontSize: 14,
-        fontWeight: "700",
-        marginBottom: 4,
-    },
-    productDetails: {
-        color: "#7F8C8D",
-        fontSize: 13,
-        fontWeight: "600",
-        marginBottom: 4,
-    },
-    productPrice: {
-        color: "#1788F0",
-        fontSize: 14,
-        fontWeight: "700",
-    },
-    quantityContainer: {
-        alignItems: "center",
-    },
-    QtyHeading: {
-        color: "#626F7F",
-        fontSize: 12,
-        fontWeight: "600",
-        marginBottom: 8,
-    },
-    quantityControls: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
+    productInfo: { flex: 1, paddingHorizontal: 8 },
+    productName: { color: "#2C3E50", fontSize: 14, fontWeight: "700", marginBottom: 4 },
+    productDetails: { color: "#7F8C8D", fontSize: 13, fontWeight: "600", marginBottom: 4 },
+    productPrice: { color: "#1788F0", fontSize: 14, fontWeight: "700" },
+    quantityContainer: { alignItems: "center" },
+    QtyHeading: { color: "#626F7F", fontSize: 12, fontWeight: "600", marginBottom: 8 },
+    quantityControls: { flexDirection: "row", alignItems: "center" },
     quantityButton: {
         width: 32,
         height: 32,
@@ -383,17 +290,12 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFF",
         borderRadius: 20,
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
     },
-    incrementButton: {
-        backgroundColor: "#E8F5FF",
-    },
+    incrementButton: { backgroundColor: "#E8F5FF" },
     quantityText: {
         paddingHorizontal: 12,
         fontSize: 16,
@@ -402,43 +304,19 @@ const styles = StyleSheet.create({
         minWidth: 30,
         textAlign: 'center',
     },
-    emptyCartContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    emptyCartContent: {
-        alignItems: "center",
-        width: '100%',
-    },
-    emptyCartIcon: {
-        marginBottom: 24,
-    },
-    emptyCartIconImage: {
-        fontSize: 95,
-        color: "#E0E6ED",
-    },
-    emptyCartText: {
-        alignItems: "center",
-    },
-    emptyCartTitle: {
-        color: "#2C3E50",
-        fontSize: 20,
-        fontWeight: "600",
-        marginBottom: 16,
-        textAlign: "center",
-    },
+    emptyCartContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+    emptyCartContent: { alignItems: "center", width: '100%' },
+    emptyCartIcon: { marginBottom: 24 },
+    emptyCartIconImage: { fontSize: 95, color: "#E0E6ED" },
+    emptyCartText: { alignItems: "center" },
+    emptyCartTitle: { color: "#2C3E50", fontSize: 20, fontWeight: "600", marginBottom: 16, textAlign: "center" },
     btnSubmit: {
         backgroundColor: "#1788F0",
         borderRadius: 25,
         paddingVertical: 12,
         paddingHorizontal: 32,
     },
-    btnSubmitText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "600",
-    },
+    btnSubmitText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
     checkOutBtn: {
         backgroundColor: "#FFF",
         padding: 20,
@@ -448,39 +326,21 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: "#E0E6ED",
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: -2,
-        },
+        shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 5,
     },
-    totalContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    totalLabel: {
-        color: "#7F8C8D",
-        fontSize: 14,
-        marginRight: 8,
-    },
-    totalAmount: {
-        color: "#1788F0",
-        fontSize: 20,
-        fontWeight: "700",
-    },
+    totalContainer: { flexDirection: "row", alignItems: "center" },
+    totalLabel: { color: "#7F8C8D", fontSize: 14, marginRight: 8 },
+    totalAmount: { color: "#1788F0", fontSize: 20, fontWeight: "700" },
     btnCheckout: {
         backgroundColor: "#1788F0",
         borderRadius: 25,
         paddingVertical: 12,
         paddingHorizontal: 24,
     },
-    btnCheckoutText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "600",
-    },
+    btnCheckoutText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.5)",
@@ -494,39 +354,16 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 24,
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
         position: 'relative',
     },
-    modalCloseButton: {
-        position: "absolute",
-        right: 12,
-        top: 12,
-        zIndex: 1,
-    },
-    modalTitle: {
-        color: "#2C3E50",
-        fontSize: 18,
-        fontWeight: "700",
-        marginBottom: 12,
-        textAlign: "center",
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "#E0E6ED",
-        marginBottom: 16,
-    },
-    modalSubtitle: {
-        color: "#7F8C8D",
-        fontSize: 14,
-        fontWeight: "600",
-        marginBottom: 8,
-    },
+    modalCloseButton: { position: "absolute", right: 12, top: 12, zIndex: 1 },
+    modalTitle: { color: "#2C3E50", fontSize: 18, fontWeight: "700", marginBottom: 12, textAlign: "center" },
+    divider: { height: 1, backgroundColor: "#E0E6ED", marginBottom: 16 },
+    modalSubtitle: { color: "#7F8C8D", fontSize: 14, fontWeight: "600", marginBottom: 8 },
     noteInput: {
         backgroundColor: "#F8F9FA",
         fontSize: 15,
@@ -545,9 +382,5 @@ const styles = StyleSheet.create({
         padding: 10,
         alignItems: "center",
     },
-    saveButtonText: {
-        color: "white",
-        fontWeight: "600",
-        fontSize: 16,
-    },
+    saveButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
 });

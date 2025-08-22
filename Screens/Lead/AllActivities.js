@@ -13,13 +13,12 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LeadActivities, leadDetailsAction } from '../../Redux/Actions/LeadSubmitAction';
-import HeaderTextCenter from '../../Component/HeaderTextCenter';
-import AlertComponent from '../../Component/AlertComponent';
 import HeaderTextLeftRight from '../../Component/HeaderTextLeftRight';
 import IconAnt from 'react-native-vector-icons/AntDesign';
 import IconFeather from 'react-native-vector-icons/Feather';
 import { useFocusEffect } from '@react-navigation/native';
-
+import LogoOverlay from '../../Component/LoaderComponent';
+import Icon from 'react-native-vector-icons/AntDesign';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -99,23 +98,26 @@ const AllActivities = ({ navigation, route }) => {
         <SafeAreaView style={{ flex: 1 }}>
             {
                 state.isLoading && (
-                    <View style={{ flex: 1, position: "absolute", zIndex: 2, left: 0, width: "100%", justifyContent: "center", height: "100%", justifyContent: 'center', alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)" }}>
-                        <View style={{
-                            paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5
-                        }}>
-                            <Image source={require('../../assets/logoSmall.png')} style={{ width: 45, height: 45, resizeMode: "cover" }} />
-                        </View>
-                    </View>
+                    <LogoOverlay />
                 )
             }
 
             <View style={styles.mainWrapper}>
-                <HeaderTextLeftRight title={"All Activities"} goBack={goBack} fontSize={25} component={
-                    <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('AddActivity', {
-                        companyInfo: route.params?.companyInfo
-                    })}>
-                        <Text style={{ color: '#FFF', fontSize: 14 }}><IconAnt name="plus" size={24} /></Text>
-                    </TouchableOpacity>} />
+                 <HeaderTextLeftRight 
+                    title="All Activities" 
+                    goBack={goBack} 
+                    fontSize={20}
+                    component={
+                        <TouchableOpacity 
+                            style={styles.addButton}
+                            onPress={() => navigation.navigate('AddActivity', {
+                                companyInfo: route.params?.companyInfo
+                            })}
+                        >
+                            <Icon name="plus" size={20} color="#FFF" />
+                        </TouchableOpacity>
+                    } 
+                />
                 <ScrollView>
                     <View style={styles.custInfo}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
@@ -124,7 +126,7 @@ const AllActivities = ({ navigation, route }) => {
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                             <IconAnt name="mail" size={15} color="#1788F0" /><Text style={{ color: '#626F7F', fontSize: 15, fontWeight: '700', marginLeft: 5 }}>{route.params?.companyInfo?.email}</Text></View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                            <IconFeather name="phone" size={15} color="#1788F0" /><Text style={{ color: '#626F7F', fontSize: 15, fontWeight: '700', marginLeft: 5 }}>{route.params?.companyInfo?.phonenumber}</Text></View>
+                            <IconAnt name="phone" size={15} color="#1788F0" /><Text style={{ color: '#626F7F', fontSize: 15, fontWeight: '700', marginLeft: 5 }}>{route.params?.companyInfo?.phonenumber}</Text></View>
                     </View>
 
                     {
@@ -255,6 +257,17 @@ var styles = StyleSheet.create({
         right: 0,
         zIndex: 3,
         borderRadius: 30
-    }
+    },
+     addButton: {
+        backgroundColor: "#1788F0",
+        width: 30,
+        height: 30,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
+        right: 0,
+        top: 0,
+    },
 });
 export default AllActivities

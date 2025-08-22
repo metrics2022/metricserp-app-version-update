@@ -11,21 +11,26 @@ import {
     FlatList
 } from 'react-native';
 
-
+import Fontawesome from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useDispatch, useSelector } from 'react-redux';
-import { salesQuoteAction } from '../../Redux/Actions/SalesQuoteAction';
+import { salesOrderAction } from '../../Redux/Actions/SalesOrderAction';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderTextLeft from '../../Component/HeaderTextLeft';
-const SalesQuotes = ({ navigation }) => {
+const SalesOrder = ({ navigation }) => {
 
-    const state = useSelector((state) => state.AllSalesQuote);
-    //const salesQuoteSubmitState = useSelector(state => state.SalesOrderSubmitReducers);
+    const state = useSelector((state) => state.AllSalesOrders);
+    const salesOrderSubmitState = useSelector(state => state.SalesOrderSubmitReducers);
     const dispatch = useDispatch();
+
     const [customerId, setCustomerId] = useState('');
     const [data, setData] = useState([]);
-    const [page, setPage] = useState(0);
-   
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+
+    //console.log('sales-order', data.length);
+
     const readItemFromStorage = async () => {
         try {
             const jsonValue = await AsyncStorage.getItem('uuid')
@@ -38,68 +43,49 @@ const SalesQuotes = ({ navigation }) => {
     useEffect(() => {
         readItemFromStorage().then((e) => setCustomerId(e.emp_data.emp_id));
     }, []);
+
     useEffect(() => {
         if (customerId != "") {
-            dispatch(salesQuoteAction({customerId, page}));
+            dispatch(salesOrderAction({customerId, page}));
         }
     }, [customerId]);
 
     useEffect(() => {
-        if(page > 0){
-            dispatch(salesQuoteAction({customerId, page}));
+        if(page > 1){
+            dispatch(salesOrderAction({customerId, page}));
         }
     }, [page]);
 
-    useEffect(() => {
-        if(state.allSalesQuotes.length>0){
-            setData([...data, ...state.allSalesQuotes]);
-           //console.log('fff',[...data, ...state.allSalesQuotes]);
-        }
-    }, [state.allSalesQuotes]);
-
-    const goBack = () => {
-        navigation.goBack()
-    }
+    // console.log("state.allSalesOrders", state?.allSalesOrders?.total_count)
 
     const renderItem = ({ item }) => {
         return (
-            <TouchableOpacity onPress={()=> navigation.navigate('SalesQuoteDetails', {
-                 header_id: item.sq_header_id
+            <TouchableOpacity onPress={()=> navigation.navigate('Sales-order-details', {
+                header_id: item.so_header_id
             })} style={styles.Row}>
                 <View style={{ width: "100%" }}>
-                    <Text style={{ color: "#1f1f1f", fontWeight: "700", fontSize: 16, marginBottom: 5 }}>#{item.sq_code}</Text>
-                    <Text style={{ color: "#626F7F", fontSize: 13, marginBottom: 4 }}>QUOTE DATE: {item.sq_date}</Text>
+                    <Text style={{ color: "#1f1f1f", fontWeight: "700", fontSize: 16, marginBottom: 5 }}>#{item.so_code}</Text>
+                    <Text style={{ color: "#626F7F", fontSize: 13, marginBottom: 4 }}>ORDER DATE: {item.add_datetime}</Text>
                     <Text style={{ color: "#626F7F", fontSize: 13, marginBottom: 4 }}>CUSTOMER: {item.customer_name}</Text>
+                    {/* <Text style={{ color: "#626F7F", fontSize: 13, marginBottom: 4 }}>TAG {item.reference1}</Text> */}
                 </View>
                 <Icon size={26} color="#626F7F" name="angle-right" style={{ position: "absolute", top: "38%", right: 0 }} />
             </TouchableOpacity>
         )
     }
 
-    // const getData = async () => {
-    //     try {
-    //         const response = await axios.get(
-    //           'https://jsonplaceholder.typicode.com/photos?_limit=10&_page='+ page,
-    //         );
-    //         //console.log(JSON.stringify(response.data));
-    //         setData([...data, ...response.data]);
-    //         setLoading(false);
-    //       } catch (error) {
-    //         // handle error
-    //         alert(error.message);
-    //       }
-    // }
-
-    // useEffect(() => {
-    //     getData();
-    //     setLoading(true);
-    //     console.log(page);
-    // }, [page]);
 
     const handleLoadMore = ()=> {
-        if(data.length >= 10){
-            // console.log('load more', page);
-            setPage(page + 1);
+        // if(state?.allSalesOrders?.orders_query?.length >= 10){
+        //     console.log('load more', page);
+        //     setPage(page + 1);
+        // }
+        if (state.isLoading || state?.allSalesOrders?.orders_query?.length >= state?.allSalesOrders?.total_count) {
+            // console.log("No more data to load or data is still loading");
+            return;
+        }
+        if (state?.allSalesOrders?.orders_query?.length >= 10) {
+            setPage(prevPage => prevPage + 1);
         }
 
     }
@@ -110,15 +96,21 @@ const SalesQuotes = ({ navigation }) => {
         )
     }
 
+    const goBack = () => {
+        navigation.goBack()
+    }
+
+
     return (
-        <SafeAreaView style={{ flex: 1 }}>
+        <>
             <View style={styles.mainWrapper}>
                 {/* <View style={{ alignItems: "center", marginBottom: 25, position: "relative" }}>
-                    <Text style={{ color: "#000", fontSize: 22, fontWeight: "700" }}>Sales Quotes</Text>
+                    <Text style={{ color: "#000", fontSize: 22, fontWeight: "700" }}>Sales Order</Text>
                     <View style={styles.line}></View>
-                </View> */}
-                <HeaderTextLeft title={"Sales Quotes"} goBack={goBack} fontSize={20}  />
-                    {/* <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ position: "absolute", right: 0, top: 0 }}><Icon name='plus-square' color="#1788F0" size={25} /></TouchableOpacity> */}
+                    </View> */}
+
+                <HeaderTextLeft title={"Sales Orders"} goBack={goBack} fontSize={25} />
+                <TouchableOpacity onPress={() => navigation.navigate('Organization')} style={{ position: "absolute", right: 15, top: 32 }}><Icon name='plus-square' color="#1788F0" size={25} /></TouchableOpacity>
 
                 {/* <ScrollView>
 
@@ -147,15 +139,20 @@ const SalesQuotes = ({ navigation }) => {
 
                 </ScrollView> */}
                 <FlatList
-                    data={data}
+                    data={state?.allSalesOrders?.orders_query}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => index.toString()}
                     onEndReached={handleLoadMore}
                     ListFooterComponent={renderFooter}
                     onEndReachedThreshold={0.5}
+                    ListEmptyComponent={
+                        <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 40 }}>
+                            <Text style={{ color: "#000", fontSize: 20, fontWeight: "700" }}>No Orders Found</Text>
+                        </View>
+                    }
                 />
             </View>
-        </SafeAreaView>
+        </>
     )
 }
 
@@ -185,4 +182,4 @@ var styles = StyleSheet.create({
     // },
 });
 
-export default SalesQuotes
+export default SalesOrder

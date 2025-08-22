@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     SafeAreaView,
     ScrollView,
@@ -12,29 +12,30 @@ import {
     TouchableWithoutFeedback,
     Image,
     FlatList,
-    Modal
+    Modal,
+    Dimensions
 } from 'react-native';
-
+import { Picker } from '@react-native-picker/picker';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { useDispatch, useSelector } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AllOrganizationAction } from '../../Redux/Actions/AllOrganizationAction';
-import { getCustOutstandingBalance,getCustPendingSalesInvoicesAction } from '../../Redux/Actions/SalesOrderAction';
+import { getCustOutstandingBalance, getCustPendingSalesInvoicesAction } from '../../Redux/Actions/SalesOrderAction';
 import HeaderTextLeft from '../../Component/HeaderTextLeft';
-import SelectDropdown from 'react-native-select-dropdown';
-import { customerInfoAction, salesQuoteCustomerAction } from '../../Redux/Actions/SalesQuoteAction';
+import { salesQuoteCustomerAction } from '../../Redux/Actions/SalesQuoteAction';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import LogoOverlay from '../../Component/LoaderComponent';
 
-
+const { width } = Dimensions.get('window');
 
 const OrganizationSearch = ({ navigation, route }) => {
     const state = useSelector((state) => state.AllSalesQuote);
     const globalReducerState = useSelector(state => state.GlobalDataReducer);
     const soState = useSelector((state) => state.AllSalesOrders);
 
-    const dispatch = useDispatch()
-    const [customerId, setCustomerId] = useState(''); // login customer id
-    const [customerName, setCustomerName] = useState(''); // login customer name
+    const dispatch = useDispatch();
+    const [customerId, setCustomerId] = useState('');
+    const [customerName, setCustomerName] = useState('');
     const [inputVal, setInputVal] = useState('');
     const [isVisible, setIsvisible] = useState(false);
     const [btnDisabled, setBtnDisabled] = useState(true);
@@ -42,13 +43,17 @@ const OrganizationSearch = ({ navigation, route }) => {
     const [orgId, setOrgId] = useState('');
     const isFocused = useIsFocused();
     const [isLoading, setisLoading] = useState(true);
+    const [selectedOrg, setSelectedOrg] = useState(null);
+    const [showNoCustomerToast, setShowNoCustomerToast] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
             if(globalReducerState?.getGlobalData?.data?.emp_org?.length > 1){
                 setModalVisible(true);
-            }else{
-                setOrgId(globalReducerState?.getGlobalData?.data?.emp_org[0]?.org_id);
+            } else {
+                const defaultOrg = globalReducerState?.getGlobalData?.data?.emp_org[0];
+                setOrgId(defaultOrg?.org_id);
+                setSelectedOrg(defaultOrg);
             }
             setIsvisible(false);
             setBtnDisabled(true);
@@ -62,22 +67,33 @@ const OrganizationSearch = ({ navigation, route }) => {
         }
     }, [soState?.custOutstanding]);
 
-    // console.log(inputVal, "inputVal")
     useEffect(() => {
         if (inputVal.length > 2) {
-            dispatch(salesQuoteCustomerAction({
-                "value": inputVal
-            }));
+            dispatch(salesQuoteCustomerAction({ "value": inputVal }));
         } else {
             setIsvisible(false);
             setBtnDisabled(true);
         }
     }, [inputVal]);
 
+    // Show toast if no customers found after search
+    useEffect(() => {
+        if (inputVal.length > 2 && state.sqCustomerSearchResult?.length === 0) {
+            setShowNoCustomerToast(true);
+            const timer = setTimeout(() => {
+                setShowNoCustomerToast(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowNoCustomerToast(false);
+        }
+    }, [state.sqCustomerSearchResult, inputVal]);
+
     const removeLocalStore = async () => {
         try {
             await AsyncStorage.removeItem('customer_id');
         } catch (e) {
+            //console.error('Error removing customer_id:', e);
         }
     };
 
@@ -85,43 +101,34 @@ const OrganizationSearch = ({ navigation, route }) => {
         if (customerId !== "") {
             dispatch(AllOrganizationAction(customerId));
             dispatch(getCustOutstandingBalance({
-                "customerId":customerId,
-                "org_id":orgId,
+                "customerId": customerId,
+                "org_id": orgId,
             }));
         }
-    }, [customerId]);
+    }, [customerId, orgId]);
 
     const setCustomerData = async (item) => {
         setInputVal(item.customer_name);
         setCustomerName(item.customer_name);
         setCustomerId(item.customer_id);
         setIsvisible(false);
-        setBtnDisabled(false);  // Enable button once a customer is selected
+        setBtnDisabled(false);
         removeLocalStore();
         try {
             await AsyncStorage.setItem('customer_id', item.customer_id.toString());
         } catch (error) {
-            console.error('Error saving customer_id to AsyncStorage:', error);
+            console.error('Error saving customer_id:', error);
         }
         Keyboard.dismiss();
     };
 
-    const goBack = () => {
-        navigation.goBack()
-    }
-
-    const handleClose = (index) => {
-        setModalVisible(false);
-    }
+    const goBack = () => navigation.goBack();
 
     const OutstandingHandlePress = () => {
         const totalUnpaid = soState?.custOutstanding?.total_unpaid ?? 0;
+        if (totalUnpaid === 0) return;
 
-        if (totalUnpaid === 0) {
-            return; // Do nothing if total_unpaid is 0
-        }
-
-        dispatch({type:"CUST_OUTSTANDING_RESET"})
+        dispatch({ type: "CUST_OUTSTANDING_RESET" });
         setCustomerId('');
         dispatch(getCustPendingSalesInvoicesAction({
             customerId: customerId,
@@ -135,302 +142,369 @@ const OrganizationSearch = ({ navigation, route }) => {
         });
     };
 
+    const handleOrgSelect = (org) => {
+        setSelectedOrg(org);
+        setOrgId(org.org_id);
+        setModalVisible(false);
+    };
+
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            {
-                soState?.custOutstanding?.isLoading && (
-                    <View style={{ flex: 1, position: "absolute", zIndex: 2, left: 0, width: "100%", justifyContent: "center", height: "100%", justifyContent: 'center', alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)" }}>
-                        <View style={{
-                            paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5
-                        }}>
-                        <Image source={require('../../assets/logoSmall.png')} style={{ width: 45, height: 45, resizeMode: "cover" }} />
-                        </View>
-                    </View>
-                )
-            }
-            <View style={styles.mainWrapper}>
-                <HeaderTextLeft title={"Customer"} goBack={goBack} fontSize={25} />
-                <View style={styles.line}></View>
-
-                <Text style={styles.Heading}>Let's Find Your Customer</Text>
-
-
-                <View style={{ zIndex: 9999 }}>
-                    {/* Input field */}
-                    <TextInput
-                        placeholder="Type here..."
-                        placeholderTextColor="#000"
-                        value={inputVal}
-                        onChangeText={(e) => {
-                            setInputVal(e);
-                            setIsvisible(e.length > 2); // Only show dropdown for input length > 2
-                        }}
-
-                        style={{ backgroundColor: "#e1e2e3", fontSize: 15, color: "#000", paddingHorizontal: 12, height: 50 }}
-                    />
-
-                    {/* Autocomplete dropdown */}
-                    {state.sqCustomerSearchResult && state.sqCustomerSearchResult.length > 0 && isVisible && (
-                        <View style={{
-                            marginTop: 5, // Adds spacing between the input and dropdown
-                            backgroundColor: "#ededed",
-                            maxHeight: 150, // Set max height to allow scrolling
-                            borderWidth: 1,
-                            borderColor: '#ccc',
-                            borderRadius: 4,
-                        }}>
-                            {/* FlatList to render search results */}
-                            <FlatList
-                                data={state.sqCustomerSearchResult}
-                                keyExtractor={(item) => item.customer_id.toString()}
-                                renderItem={({ item }) => (
-                                    <TouchableWithoutFeedback onPress={() => setCustomerData(item)}>
-                                        <Text
-                                            style={{
-                                                color: "#000",
-                                                fontSize: 15,
-                                                paddingHorizontal: 10,
-                                                paddingVertical: 5,
-                                                borderBottomColor: '#ccc',
-                                                borderBottomWidth: 1,
-                                            }}
-                                        >
-                                            {item.customer_name}
-                                        </Text>
-                                    </TouchableWithoutFeedback>
-                                )}
-                                style={{ maxHeight: 150 }}
-                                showsVerticalScrollIndicator={true}
-                            />
-                        </View>
-                    )}
+        <SafeAreaView style={styles.safeArea}>
+            {/* Loading Overlay */}
+            {soState?.custOutstanding?.isLoading && (
+                <LogoOverlay/>
+            )}
+            
+            {/* No Customer Found Toast */}
+            {showNoCustomerToast && (
+                <View style={styles.toastContainer}>
+                    <Text style={styles.toastText}>No customer found</Text>
                 </View>
-                {customerId != ""  &&(
-
-                    <View style={styles.row}>
-                        <TouchableOpacity
-                            style={styles.singleButton}
-                            onPress={() => {
-                                dispatch({type:"CUST_OUTSTANDING_RESET"});
-                                navigation.navigate('SearchProducts', {
-                                    vendorId: customerId,
-                                    customerName: customerName,
-                                    orgId: orgId
-                                });
-                                setCustomerId('');
+            )}
+            
+            {/* Main Content */}
+            <View style={styles.container}>
+                <HeaderTextLeft title={"Customer Search"} goBack={goBack} fontSize={20} />
+                
+                <View style={styles.content}>
+                    <Text style={styles.title}>Let's Find Your Customer</Text>
+                    
+                    {/* Customer Search Input */}
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            placeholder="Search customer by name..."
+                            placeholderTextColor="#888"
+                            value={inputVal}
+                            onChangeText={(text) => {
+                                setInputVal(text);
+                                setIsvisible(text.length > 2);
                             }}
-                        >
-                        <Text style={[styles.singleButtonText, { color: "white" }]}>
-                            New Sales Order
-                        </Text>
-                        </TouchableOpacity>
+                            style={styles.searchInput}
+                        />
 
-                        <TouchableOpacity style={styles.singleButton} onPress={OutstandingHandlePress}>
-                            <View>
+                        {/* Search Results Dropdown */}
+                        {isVisible && state.sqCustomerSearchResult?.length > 0 && (
+                            <View style={styles.resultsContainer}>
+                                <FlatList
+                                    data={state.sqCustomerSearchResult}
+                                    keyExtractor={(item) => item.customer_id.toString()}
+                                    renderItem={({ item }) => (
+                                        <TouchableWithoutFeedback onPress={() => setCustomerData(item)}>
+                                            <View style={styles.resultItem}>
+                                                <Text style={styles.resultText}>{item.customer_name}</Text>
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    )}
+                                    style={styles.resultsList}
+                                    keyboardShouldPersistTaps="always"
+                                />
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Action Buttons */}
+                    {customerId && (
+                        <View style={styles.actionsContainer}>
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.newOrderButton]}
+                                onPress={() => {
+                                    dispatch({ type: "CUST_OUTSTANDING_RESET" });
+                                    navigation.navigate('SearchProducts', {
+                                        vendorId: customerId,
+                                        customerName: customerName,
+                                        orgId: orgId
+                                    });
+                                    setCustomerId('');
+                                }}
+                            >
+                                <Text style={styles.buttonText}>New Sales Order</Text>
+                                <AntDesign name="pluscircleo" size={20} color="white" style={styles.buttonIcon} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.actionButton, styles.outstandingButton]}
+                                onPress={OutstandingHandlePress}
+                            >
                                 {isLoading ? (
                                     <ActivityIndicator size="small" color="white" />
                                 ) : (
-                                    <Text style={[styles.singleButtonText, { color: "white" }]}>
-                                        {soState.custOutstanding.currency_code}{" "}
-                                        {parseFloat(soState.custOutstanding.total_unpaid ?? 0).toFixed(2)}
-                                    </Text>
+                                    <View style={styles.outstandingContainer}>
+                                        <Text style={styles.outstandingAmount}>
+                                            {soState.custOutstanding.currency_code}{" "}
+                                            {parseFloat(soState.custOutstanding.total_unpaid ?? 0).toFixed(2)}
+                                        </Text>
+                                        <Text 
+                                            style={[
+                                                styles.outstandingLabel,
+                                                width < 400 ? styles.smallScreenLabel : styles.largeScreenLabel
+                                            ]}
+                                            numberOfLines={2}
+                                            adjustsFontSizeToFit
+                                        >
+                                            Outstanding Balance
+                                        </Text>
+                                    </View>
                                 )}
-                                <Text style={[styles.singleButtonText, { fontSize: 15, fontWeight: "700", color: "white" }]}>
-                                    Outstanding
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                    </View>
-
-                )}
-
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
             </View>
 
-
-
-            <View style={[styles.centeredView, { backgroundColor: modalVisible ? "rgba(0,0,0,0.5)" : "transparent", display: modalVisible ? "flex" : "none" }]}>
-                <Modal
-                    animationType="fade"
-                    transparent={true}
-                    visible={modalVisible}
-                    // onRequestClose={(index) => {
-                    //     setModalVisible(!modalVisible);
-                    // }}
-                >
-                    <View style={{ flex: 1, alignItems: "center", flexDirection: "column", justifyContent: "center" }}>
-                        <View style={styles.modalView}>
-                            {/* <TouchableOpacity onPress={() => { handleClose(); setOrgId(''); }} style={{ position: "absolute", right: -10, top: -10, zIndex: 99, backgroundColor: "#FFF", borderRadius: 40, overflow: "hidden" }}><MaterialCommunityIcons size={35} color="red" name="close-circle" /></TouchableOpacity> */}
-                            <Text style={{ color: "#626F7F", fontSize: 16, fontWeight: "700", marginBottom: 10 }}>Please choose organization:</Text>
-                            <SelectDropdown
-                                buttonStyle={{ backgroundColor: '#e1e2e3', width: '100%', margin: 0, height: 50 }}
-                                buttonTextStyle={{ textAlign: 'left', padding: 0, fontSize: 16 }}
-                                defaultButtonText="Select"
-                                data={globalReducerState?.getGlobalData?.data?.emp_org}
-                                onSelect={(selectedItem, index) => {
-                                    setOrgId(selectedItem.org_id);
-                                    setModalVisible(!modalVisible);
+            {/* Organization Selection Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Select Organization</Text>
+                        
+                        {/* Picker Component */}
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={selectedOrg?.org_id}
+                                onValueChange={(itemValue, itemIndex) => {
+                                    const selected = globalReducerState?.getGlobalData?.data?.emp_org.find(
+                                        org => org.org_id === itemValue
+                                    );
+                                    handleOrgSelect(selected);
                                 }}
-                                buttonTextAfterSelection={(selectedItem, index) => {
-                                    //console.log("selectedItem", selectedItem)
-                                    // text represented after item is selected
-                                    // if data array is an array of objects then return selectedItem.property to render after item is selected
-                                    return selectedItem.org_name;
-                                }}
-                                rowTextForSelection={(item, index) => {
-                                    //console.log("item", item)
-                                    // text represented for each item in dropdown
-                                    // if data array is an array of objects then return item.property to represent item in dropdown
-                                    return item.org_name
-                                }}
-                                renderDropdownIcon={() => {
-                                    return <AntDesign name='caretdown' size={12} color="#000" />;
-                                }}
-                            />
-
-                            {/* <TouchableOpacity style={[styles.btnSubmit, { backgroundColor: orgId == '' ? "#9d9d9d" : "#1788F0" }]} onPress={() => {
-                                navigation.push('searchLeadCustomerScreen', {
-                                    pageTitle: navigatePage,
-                                    orgId: orgId
-                                });
-                                setOrgId("");
-                                setModalVisible(!modalVisible);
-                            }}>
-                                <Text style={styles.btnSubmitText}>Next</Text>
-                            </TouchableOpacity> */}
+                                style={styles.picker}
+                                dropdownIconColor="#1788F0"
+                            >
+                                {globalReducerState?.getGlobalData?.data?.emp_org?.map((org) => (
+                                    <Picker.Item 
+                                        key={org.org_id} 
+                                        label={org.org_name} 
+                                        value={org.org_id} 
+                                    />
+                                ))}
+                            </Picker>
                         </View>
 
+                        <TouchableOpacity 
+                            style={styles.modalButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                        <Text style={styles.modalButtonText}>Confirm Selection</Text>
+                        </TouchableOpacity>
                     </View>
-                </Modal>
-            </View>
-
+                </View>
+            </Modal>
         </SafeAreaView>
-    )
-}
+    );
+};
 
-var styles = StyleSheet.create({
-    mainWrapper: {
+const styles = StyleSheet.create({
+    safeArea: {
         flex: 1,
-        // alignItems: "center",
-        backgroundColor: '#FFF',
-        position: "relative",
-        paddingTop: 30,
-        paddingBottom: 10,
-        paddingHorizontal: 20
+        backgroundColor: '#F8F9FA',
     },
-    Heading: {
+    container: {
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingTop: 20,
+    },
+    content: {
+        flex: 1,
+        marginTop: 20,
+    },
+    title: {
         fontSize: 20,
-        fontWeight: "500",
-        color: "#252525",
-        marginBottom: 35
+        fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: 30,
+        textAlign: 'left', // Changed to left as requested
     },
-    // line: {
-    //     width: 34,
-    //     height: 4,
-    //     backgroundColor: "#1788F0",
-    //     borderRadius: 3,
-    //     marginTop: 10,
-    //     marginBottom: 30
-    // },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop:80,
+    searchContainer: {
+        marginBottom: 20,
+        zIndex: 1000,
     },
-    singleButton: {
-        width: "48%",
-        height: 200,
-        marginHorizontal: "1%",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#1788F0",
+    searchInput: {
+        backgroundColor: "#FFF",
+        fontSize: 16,
+        color: "#333",
+        paddingHorizontal: 16,
+        height: 50,
         borderRadius: 8,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    resultsContainer: {
+        marginTop: 8,
+        backgroundColor: "#FFF",
+        maxHeight: 200,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    resultItem: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    resultText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    resultsList: {
+        flexGrow: 0,
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 30,
+    },
+    actionButton: {
+        width: '48%',
+        height: 140,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 3,
     },
-    singleButtonText: {
+    newOrderButton: {
+        backgroundColor: '#1788F0',
+    },
+    outstandingButton: {
+        backgroundColor: '#2ECC71',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    buttonIcon: {
+        marginTop: 8,
+    },
+    outstandingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    outstandingAmount: {
+        color: 'white',
         fontSize: 18,
-        fontWeight: "700",
-        textAlign: "center",
+        fontWeight: '700',
+        marginBottom: 4,
+        textAlign: 'center',
     },
-    singleButtonText1: {
-        fontSize: 20,
-        fontWeight:"700",
-        marginLeft:18
+    outstandingLabel: {
+        color: 'white',
+        fontWeight: '600',
+        textAlign: 'center',
     },
-    Row: {
-      flexDirection: "row",
-      marginHorizontal: -5,
-      flexWrap: "wrap"
+    smallScreenLabel: {
+        fontSize: 12,
+        lineHeight: 16,
     },
-    listItem: {
-        fontSize: 15,
-        padding: 0
+    largeScreenLabel: {
+        fontSize: 14,
     },
-    btnSubmit: {
-        width: 170,
-        backgroundColor: "#3b5998",
-        borderRadius: 30,
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 30,
-        paddingHorizontal: 18,
-        paddingVertical: 12,
-        marginLeft: 'auto',
-        marginRight: 'auto'
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
     },
-    btnSubmitText: {
-        color: '#FFF',
-        fontSize: 18,
-        fontWeight: "500",
-        textTransform: "uppercase"
-    },
-    eachbox: {
-        width: "100%",
-        paddingHorizontal: 5,
-        marginBottom: 30
-    },
-    btnArea: {
-        backgroundColor: "#3b5998",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 15,
-        height: 160,
-        borderRadius: 10
-    },
-    centeredView: {
-        width: "100%",
-        height: "100%",
-        position: "absolute",
-        flex: 1,
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    modalView: {
-        width: "85%",
-        margin: 0,
-        flexDirection: "column",
-        backgroundColor: "white",
+    loadingContainer: {
+        padding: 20,
         borderRadius: 10,
-        paddingHorizontal: 25,
-        paddingVertical: 25,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
+        backgroundColor: 'white',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        elevation: 5
+        elevation: 5,
     },
-
+    loadingLogo: {
+        width: 60,
+        height: 60,
+        resizeMode: 'contain',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    modalContainer: {
+        width: '100%',
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#2C3E50',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 8,
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    picker: {
+        width: '100%',
+        height: 50,
+    },
+    modalButton: {
+        backgroundColor: '#1788F0',
+        borderRadius: 8,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    modalButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    toastContainer: {
+        position: 'absolute',
+        top: 100,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        zIndex: 1000,
+    },
+    toastText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '500',
+    },
 });
 
-export default OrganizationSearch
+export default OrganizationSearch;

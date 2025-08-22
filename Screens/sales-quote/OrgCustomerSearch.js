@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     ScrollView,
@@ -7,80 +7,62 @@ import {
     TextInput,
     TouchableOpacity,
     View,
-    ActivityIndicator,
-    Keyboard,
+    Image,
+    Dimensions,
+    StatusBar,
+    Platform,
+    Modal,
     TouchableWithoutFeedback
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Fontawesome from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-
 import { useDispatch, useSelector } from 'react-redux';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AllOrganizationAction } from '../../Redux/Actions/AllOrganizationAction';
-import { SearchCustomerAction } from '../../Redux/Actions/SearchCustomerAction';
-import { CustomerDependencySiteAction } from '../../Redux/Actions/SearchCustomerAction';
 import { CustomerDependencyContactAction } from '../../Redux/Actions/SearchCustomerAction';
-import { storeIds } from '../../Redux/Actions/SalesQuoteSubmitAction';
-import HeaderTextLeft from '../../Component/HeaderTextLeft'
-import SelectDropdown from 'react-native-select-dropdown'
-import { Modal } from 'react-native';
+import HeaderTextLeft from '../../Component/HeaderTextLeft';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from 'react-native-vector-icons/AntDesign';
 
+const { width } = Dimensions.get('window');
 
 const OrgCustomerSearch = ({ navigation, route }) => {
-    const organizationState = useSelector((state) => state.AllOrganization);
-    const searchCustomerState = useSelector((state) => state.SearchCustomer);
-    const customerSitesState = useSelector((state) => state.SearchCustomer); // varible that store in store.js
-    const customerContactsState = useSelector((state) => state.SearchCustomer);
     const globalReducerState = useSelector(state => state.GlobalDataReducer);
     const dispatch = useDispatch();
 
-    const [customerId, setCustomerId] = useState(''); // login employee id
-    const [selectedVal, setSelectedVal] = useState(1);
-    const [inputVal, setInputVal] = useState('');
-    const [vendorid, setVendorid] = useState(''); // search customer id
-    const [isVisible, setIsvisible] = useState(false);
-    const [btnDisabled, setBtnDisabled] = useState(true);
-    const [menuAccess, setMenuAccess] = useState('');
-    const [delivaryVal, setDelivaryVal] = useState('');
-    const [customerSitesValue, setcustomerSitesValue] = useState('');
-    const [customerContactsValue, setCustomerContactsValue] = useState('');
+    const [customerId, setCustomerId] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [navigatePage, setNavigatePage] = useState('');
     const [orgId, setOrgId] = useState('');
-
-
+    const [selectedOrg, setSelectedOrg] = useState(null);
+    const [menuAccess, setMenuAccess] = useState('');
 
     const getmoduleData = async () => {
         try {
-            //const value = await AsyncStorage.getItem('moduleData')
-            const jsonValue = await AsyncStorage.getItem('moduleData')
-            return jsonValue != null ? JSON.parse(jsonValue) : null
-
+            const jsonValue = await AsyncStorage.getItem('moduleData');
+            return jsonValue != null ? JSON.parse(jsonValue) : null;
         } catch (err) {
-            // console.log(err)
+            console.error(err);
         }
+    };
 
-    }
     useEffect(() => {
         getmoduleData().then((e) => { setMenuAccess(e) });
     }, []);
 
-    //console.log('orgCustomer', menuAccess)
-
     const readItemFromStorage = async () => {
         try {
-            const jsonValue = await AsyncStorage.getItem('uuid')
-            return jsonValue != null ? JSON.parse(jsonValue) : null
+            const jsonValue = await AsyncStorage.getItem('uuid');
+            return jsonValue != null ? JSON.parse(jsonValue) : null;
         } catch (e) {
-            // read error
+            console.error(e);
         }
-    }
+    };
 
     useEffect(() => {
-        readItemFromStorage().then((e) => { setCustomerId(e.emp_data.emp_id) });
+        readItemFromStorage().then((e) => { 
+            setCustomerId(e.emp_data.emp_id);
+        });
     }, []);
 
     useEffect(() => {
@@ -89,482 +71,368 @@ const OrgCustomerSearch = ({ navigation, route }) => {
         }
     }, [customerId]);
 
-
-
-
-    const branchItems = () => {
-        return (
-            organizationState.allBranchs?.map((item, index) => {
-                return (
-                    <Picker.Item style={styles.listItem} key={index} label={item.org_name} value={item.org_id} />
-                )
-            })
-        )
-    }
-
-    useEffect(() => {
-        if (inputVal.length > 3) {
-            dispatch(SearchCustomerAction(inputVal));
-        } else {
-            setIsvisible(false);
-            setBtnDisabled(true);
-        }
-    }, [inputVal]);
-
-    useEffect(() => {
-        if (vendorid) {
-            //console.log('cus',vendorid)
-            dispatch(CustomerDependencySiteAction(vendorid));
-        } else {
-            setIsvisible(false);
-            setBtnDisabled(true);
-        }
-    }, [vendorid]);
-
-    useEffect(() => {
-        if (vendorid) {
-            //console.log('con',vendorid)
-            dispatch(CustomerDependencyContactAction(vendorid));
-        } else {
-            setIsvisible(false);
-            setBtnDisabled(true);
-        }
-    }, [vendorid]);
-
-    useEffect(() => {
-        if (inputVal == "" || customerContactsValue == '') {
-            setBtnDisabled(true);
-        } else {
-            setBtnDisabled(false)
-        }
-    }, [inputVal, customerContactsValue])
     const goBack = () => {
-        navigation.goBack()
-    }
-    const customerSiteData = () => {
-        return (
-            customerSitesState.customerSites?.map((item, index) => {
-                //console.log('sites',item)
-                return (
-                    <Picker.Item style={styles.listItem} key={index} label={item.customer_site_code} value={item.customer_site_id} />
-                )
-            })
-        )
-    }
-    const customerContactData = () => {
-        return (
-            customerContactsState.customerContacts?.map((item, index) => {
-                //console.log('name',item.contact_fname.concat(" " , item.contact_lname))
-                return (
-                    <Picker.Item style={styles.listItem} key={index} label={item.contact_fname.concat(" ", item.contact_lname)} value={item.customer_contact_id} />
-                )
-            })
-        )
-    }
+        navigation.goBack();
+    };
 
-
-    const handleClose = (index) => {
+    const handleClose = () => {
         setModalVisible(false);
-    }
+        setSelectedOrg(null);
+    };
 
+    const handleOrganizationSelect = () => {
+        if (selectedOrg) {
+            navigation.push('searchLeadCustomerScreen', {
+                pageTitle: navigatePage,
+                orgId: selectedOrg.org_id
+            });
+            setModalVisible(false);
+            setSelectedOrg(null);
+        }
+    };
+
+    const handleCardPress = (pageType) => {
+        setNavigatePage(pageType);
+        if (globalReducerState?.getGlobalData?.data?.emp_org?.length > 1) {
+            setModalVisible(true);
+        } else {
+            navigation.push('searchLeadCustomerScreen', {
+                pageTitle: pageType,
+                orgId: globalReducerState?.getGlobalData?.data?.emp_org[0]?.org_id
+            });
+        }
+    };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.mainWrapper}>
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            
+            <View style={styles.headerContainer}>
+                <HeaderTextLeft title="Sales Quote" goBack={goBack} fontSize={20} />
+            </View>
 
-                {/* <View style={{ position: "relative" }}>
-                <Text style={styles.Heading}>New Sales Quote</Text>
-            </View> */}
-                <HeaderTextLeft title={"Sales Quote"} goBack={goBack} fontSize={25} />
-                <View style={styles.line}></View>
-                {/* <View style={styles.Row}>
-                    <View style={{ width: "100%", paddingHorizontal: 5 }}>
-                        <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, fontWeight: "700" }}>Organization:</Text>
-                        <Picker
-                            selectedValue={selectedVal}
-                            style={{ color: "#000", padding: 0, backgroundColor: "#e1e2e3" }}
-                            dropdownIconColor="#000"
-                            onValueChange={(itemValue, itemIndex) =>
-                                setSelectedVal(itemValue)
-                            }
-                        >
-
-                        <Picker.Item style={styles.listItem} label="Organization One" value="1" />
-                        <Picker.Item style={styles.listItem} label="Organization Two" value="2" />
-                        {branchItems()}
-                        </Picker>
-                        <SelectDropdown
-                        buttonStyle={{ backgroundColor: '#e1e2e3', width: '100%', margin: 0, height:50 }}
-                        buttonTextStyle={{ textAlign: 'left', padding: 0, fontSize: 16 }}
-                        defaultButtonText="Select Option"
-                        data={organizationState?.allBranchs}
-                        onSelect={(selectedItem, index) => {
-                            setSelectedVal(selectedItem.org_id)
-                        }}
-                        buttonTextAfterSelection={(selectedItem, index) => {
-                            //console.log("selectedItem", selectedItem)
-                            // text represented after item is selected
-                            // if data array is an array of objects then return selectedItem.property to render after item is selected
-                            return selectedItem.org_name
-                        }}
-                        rowTextForSelection={(item, index) => {
-                            //console.log("item", item)
-                            // text represented for each item in dropdown
-                            // if data array is an array of objects then return item.property to represent item in dropdown
-                            return item.org_name
-                        }}
-                        renderDropdownIcon={()=>{
-                            return <AntDesign name='caretdown' size={12} color="#000" />;
-                        }}
-                    />
-                    </View>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.headerSection}>
+                   
+                    <Text style={styles.title}>Who would you like to create a Sales Quote for?</Text>
+                    <Text style={styles.subtitle}>Select the type of customer you want to create a quote for</Text>
                 </View>
-                <View style={[styles.Row, {zIndex:9999, position:'relative'}]}>
-                    <View style={{ width: "100%", paddingHorizontal: 5, position: "relative", marginTop: 20 }}>
-                        <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, fontWeight: "700" }}>Customer:</Text>
-                        <TextInput placeholder="Start Typing..." placeholderTextColor="#1a1a1a" value={inputVal} onChangeText={(e) => { setInputVal(e), setIsvisible(true) }} style={{ backgroundColor: "#e1e2e3", fontSize: 15, color: "#000", paddingHorizontal: 12, height:50 }} />
 
-                        {
-                            searchCustomerState.customerList !== undefined && (
-                                searchCustomerState.customerList.length > 0 && (
-
-                                    isVisible && (
-                                        <View style={{ width: "100%", height: 150, position: "absolute", overflow: "hidden", top: "100%", zIndex: 999, left: 5, right: 0, backgroundColor: "#ededed", paddingTop: 5, paddingBottom: 8 }}>
-                                            <ScrollView keyboardShouldPersistTaps='handled'>
-                                                {
-                                                    searchCustomerState.customerList?.map((item, index, arr) => {
-                                                        if (arr.length - 1 === index) {
-                                                            return (
-                                                                <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(), setInputVal(item.customer_name), setIsvisible(false), setVendorid(item.customer_id), setBtnDisabled(false) }} key={index}>
-                                                                    <Text style={{ color: "#000", fontSize: 15, paddingHorizontal: 10, paddingVertical: 5}}>{item.customer_name}</Text>
-                                                                </TouchableWithoutFeedback>
-                                                            )
-                                                        } else {
-                                                            return (
-                                                                <TouchableWithoutFeedback onPress={() => {Keyboard.dismiss(), setInputVal(item.customer_name), setIsvisible(false), setVendorid(item.customer_id), setBtnDisabled(false) }} key={index}>
-                                                                    <Text style={{ color: "#000", fontSize: 15, paddingHorizontal: 10, paddingVertical: 5, borderBottomColor: "#ccc", borderBottomWidth: 1}}>{item.customer_name}</Text>
-                                                                </TouchableWithoutFeedback>
-                                                            )
-                                                        }
-
-                                                    })
-                                                }
-                                            </ScrollView>
-                                        </View>
-                                    )
-                                )
-                            )
-                        }
-
-                    </View>
-                </View>
-                <View style={styles.Row}>
-                    <View style={{width: "100%", paddingHorizontal: 5, position: "relative", marginTop: 20 }}>
-                        <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, fontWeight: "700" }}>Customer Sites:</Text>
-                        <Picker
-                            selectedValue={customerSitesValue}
-                            style={{ color: "#000", padding: 0, backgroundColor: "#e1e2e3" }}
-                            dropdownIconColor="#000"
-                            onValueChange={(itemValue, itemIndex) =>
-                                setcustomerSitesValue(itemValue)
-                            }
-                            >
-                             <Picker.Item label="Select Customer Site" value="0" />
-                                {
-                                    customerSiteData()
-                                }
-                        </Picker>
-
-                        <SelectDropdown
-                            buttonStyle={{ backgroundColor: '#e1e2e3', width: '100%', margin: 0, height:50 }}
-                            buttonTextStyle={{ textAlign: 'left', padding: 0, fontSize: 16 }}
-                            defaultButtonText="Select Customer Site"
-                            data={customerSitesState?.customerSites}
-                            onSelect={(selectedItem, index) => {
-                                setcustomerSitesValue(selectedItem.customer_site_id)
-                            }}
-                            buttonTextAfterSelection={(selectedItem, index) => {
-                                //console.log("selectedItem", selectedItem)
-                                // text represented after item is selected
-                                // if data array is an array of objects then return selectedItem.property to render after item is selected
-                                return selectedItem.customer_site_code
-                            }}
-                            rowTextForSelection={(item, index) => {
-                                //console.log("item", item)
-                                // text represented for each item in dropdown
-                                // if data array is an array of objects then return item.property to represent item in dropdown
-                                return item.customer_site_code
-                            }}
-                            renderDropdownIcon={()=>{
-                                return <AntDesign name='caretdown' size={12} color="#000" />;
-                            }}
-                    />
-
-                    </View>
-                    <View style={{width: "100%", paddingHorizontal: 5, position: "relative", marginTop: 20 }}>
-                        <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, fontWeight: "700" }}>Customer Contacts:</Text>
-                        <Picker
-                            selectedValue={customerContactsValue}
-                            style={{ color: "#000", padding: 0, backgroundColor: "#e1e2e3" }}
-                            dropdownIconColor="#000"
-                            onValueChange={(itemValue, itemIndex) =>
-                                setCustomerContactsValue(itemValue)
-                            }
-                            >
-                             <Picker.Item label="Select Customer Contacts" value="0" />
-                                {
-                                    customerContactData()
-                                }
-                        </Picker>
-
-                        <SelectDropdown
-                            buttonStyle={{ backgroundColor: '#e1e2e3', width: '100%', margin: 0, height:50 }}
-                            buttonTextStyle={{ textAlign: 'left', padding: 0, fontSize: 16 }}
-                            defaultButtonText="Select Customer Contacts"
-                            data={customerContactsState?.customerContacts}
-                            onSelect={(selectedItem, index) => {
-                                setCustomerContactsValue(selectedItem.customer_contact_id)
-                            }}
-                            buttonTextAfterSelection={(selectedItem, index) => {
-                                //console.log("selectedItem", selectedItem)
-                                // text represented after item is selected
-                                // if data array is an array of objects then return selectedItem.property to render after item is selected
-                                return selectedItem.contact_fname.concat(" " , selectedItem.contact_lname)
-                            }}
-                            rowTextForSelection={(item, index) => {
-                                //console.log("item", item)
-                                // text represented for each item in dropdown
-                                // if data array is an array of objects then return item.property to represent item in dropdown
-                                return item.contact_fname.concat(" " , item.contact_lname)
-                            }}
-                            renderDropdownIcon={()=>{
-                                return <AntDesign name='caretdown' size={12} color="#000" />;
-                            }}
-                    />
-
-                    </View>
-                    <View style={{ width: "100%", paddingHorizontal: 5, position: "relative", marginTop: 20 }}>
-                        <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, fontWeight: "700" }}>Delivery Address:</Text>
-                        <TextInput placeholder="Start Typing..." placeholderTextColor="#1a1a1a" value={delivaryVal} onChangeText={(e) => { setDelivaryVal(e) }} style={{ backgroundColor: "#e1e2e3", fontSize: 15, color: "#000", paddingHorizontal: 12, height:50 }} />
-
-                    </View>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-                    {
-
-                            <TouchableOpacity disabled={btnDisabled} style={[styles.btnSubmit, { backgroundColor: btnDisabled ? "#9d9d9d" : "#1788F0" }]} onPress={() => {
-                                navigation.navigate('SearchProducts', {
-                                    vendorId: vendorid
-                                })
-                                dispatch(storeIds({
-                                    organizationId:selectedVal,
-                                    customerId:vendorid,
-                                    customerSiteId:customerSitesValue,
-                                    customerContactId:customerContactsValue,
-                                    delivaryAddress:delivaryVal
-                                }))
-                            }
-                            }>
-                                <Text style={{ color: "#FFF", fontSize: 18 }}>NEXT</Text>
-                            </TouchableOpacity>
-                }
-                </View> */}
-
-                <Text style={styles.Heading}>Who would you like to create a Sales Quote for?</Text>
-
-                <View style={styles.eachbox}>
-
+                <View style={styles.cardsContainer}>
+                    {/* Customer Card */}
                     <TouchableOpacity
-                        style={styles.btnArea}
-                        onPress={() => {
-                            if (globalReducerState?.getGlobalData?.data?.emp_org?.length > 1) {
-                                setModalVisible(true);
-                                setNavigatePage("Customer");
-                            } else {
-                                navigation.push('searchLeadCustomerScreen', {
-                                    pageTitle: "Customer",
-                                    orgId:globalReducerState?.getGlobalData?.data?.emp_org[0]?.org_id
-                                });
-                            }
-                        }}
+                        style={styles.card}
+                        onPress={() => handleCardPress("Customer")}
                     >
-                        <Text style={{ color: "#FFF", fontSize: 22, fontWeight: "600", textTransform: "uppercase", textAlign: 'center' }}>Customer</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={[styles.eachbox, {opacity:0.5}]} >
-                    <TouchableOpacity
-                    style={styles.btnArea}
-                    disabled={true}
-                    onPress={() => {
-                        if (globalReducerState?.getGlobalData?.data?.emp_org?.length > 1) {
-                            setModalVisible(true);
-                            setNavigatePage("Lead");
-                        } else {
-                            navigation.push('searchLeadCustomerScreen', {
-                                pageTitle: "Lead",
-                                orgId:globalReducerState?.getGlobalData?.data?.emp_org[0]?.org_id
-                            });
-                        }
-                    }}>
-                        <Text style={{ color: "#FFF", fontSize: 22, fontWeight: "600", textTransform: "uppercase", textAlign: 'center' }}>Lead</Text>
-                    </TouchableOpacity>
-                </View>
-
-            </View>
-            <View style={[styles.centeredView, { backgroundColor: modalVisible ? "rgba(0,0,0,0.5)" : "transparent", display: modalVisible ? "flex" : "none" }]}>
-                <Modal
-                    animationType="fade"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={(index) => {
-                        setModalVisible(!modalVisible);
-                    }}
-                >
-                    <View style={{ flex: 1, alignItems: "center", flexDirection: "column", justifyContent: "center" }}>
-                        <View style={styles.modalView}>
-                            <TouchableOpacity onPress={() => { handleClose(); setOrgId(''); }} style={{ position: "absolute", right: -10, top: -10, zIndex: 99, backgroundColor: "#FFF", borderRadius: 40, overflow: "hidden" }}><MaterialCommunityIcons size={35} color="red" name="close-circle" /></TouchableOpacity>
-                            <Text style={{ color: "#626F7F", fontSize: 16, fontWeight: "700", marginBottom: 10 }}>Please choose organization:</Text>
-                            <SelectDropdown
-                                buttonStyle={{ backgroundColor: '#e1e2e3', width: '100%', margin: 0, height: 50 }}
-                                buttonTextStyle={{ textAlign: 'left', padding: 0, fontSize: 16 }}
-                                defaultButtonText="Select"
-                                data={globalReducerState?.getGlobalData?.data?.emp_org}
-                                onSelect={(selectedItem, index) => {
-                                    setOrgId(selectedItem.org_id);
-                                    navigation.push('searchLeadCustomerScreen', {
-                                        pageTitle: navigatePage,
-                                        orgId: selectedItem.org_id
-                                    });
-                                    // setOrgId("");
-                                    setModalVisible(!modalVisible);
-                                }}
-                                buttonTextAfterSelection={(selectedItem, index) => {
-                                    //console.log("selectedItem", selectedItem)
-                                    // text represented after item is selected
-                                    // if data array is an array of objects then return selectedItem.property to render after item is selected
-                                    return selectedItem.org_name;
-                                }}
-                                rowTextForSelection={(item, index) => {
-                                    //console.log("item", item)
-                                    // text represented for each item in dropdown
-                                    // if data array is an array of objects then return item.property to represent item in dropdown
-                                    return item.org_name
-                                }}
-                                renderDropdownIcon={() => {
-                                    return <AntDesign name='caretdown' size={12} color="#000" />;
-                                }}
-                            />
-
-                            {/* <TouchableOpacity style={[styles.btnSubmit, { backgroundColor: orgId == '' ? "#9d9d9d" : "#1788F0" }]} onPress={() => {
-                                navigation.push('searchLeadCustomerScreen', {
-                                    pageTitle: navigatePage,
-                                    orgId: orgId
-                                });
-                                setOrgId("");
-                                setModalVisible(!modalVisible);
-                            }}>
-                                <Text style={styles.btnSubmitText}>Next</Text>
-                            </TouchableOpacity> */}
+                        <View style={styles.cardInner}>
+                            <View style={[styles.cardIcon, styles.customerIcon]}>
+                                <Icon name="user" size={32} color="#FFFFFF" />
+                            </View>
+                            <View style={styles.cardTextContainer}>
+                                <Text style={styles.cardTitle}>Customer</Text>
+                                <Text style={styles.cardDescription}>
+                                    Create quote for existing customers
+                                </Text>
+                            </View>
+                            <View style={styles.cardArrow}>
+                                <Icon name="right" size={20} color="#7F8C8D" />
+                            </View>
                         </View>
+                    </TouchableOpacity>
 
+                    {/* Lead Card */}
+                    <TouchableOpacity
+                        style={[styles.card, styles.leadCard]}
+                        onPress={() => handleCardPress("Lead")}
+                        disabled={true}
+                    >
+                        <View style={styles.cardInner}>
+                            <View style={[styles.cardIcon, styles.leadIcon]}>
+                                <Icon name="adduser" size={32} color="#FFFFFF" />
+                            </View>
+                            <View style={styles.cardTextContainer}>
+                                <Text style={styles.cardTitle}>Lead</Text>
+                                <Text style={styles.cardDescription}>
+                                    Create quote for potential leads
+                                </Text>
+                                <View style={styles.comingSoonBadge}>
+                                    <Text style={styles.comingSoonText}>Coming Soon</Text>
+                                </View>
+                            </View>
+                            <View style={styles.cardArrow}>
+                                <Icon name="right" size={20} color="#BDC3C7" />
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.infoSection}>
+                    <Icon name="infocirlceo" size={20} color="#7F8C8D" style={styles.infoIcon} />
+                    <Text style={styles.infoText}>
+                        Select an option to proceed with creating your sales quote
+                    </Text>
+                </View>
+            </ScrollView>
+
+            {/* Organization Selection Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={handleClose}
+            >
+                <TouchableWithoutFeedback onPress={handleClose}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Select Organization</Text>
+                                    <TouchableOpacity onPress={handleClose} style={styles.modalCloseButton}>
+                                        <Icon name="close" size={24} color="#7F8C8D" />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={styles.modalSubtitle}>
+                                    Please choose the organization for this sales quote:
+                                </Text>
+
+                                <View style={styles.pickerContainer}>
+                                    <Picker
+                                        selectedValue={selectedOrg}
+                                        style={styles.picker}
+                                        dropdownIconColor="#1788F0"
+                                        onValueChange={(itemValue) => setSelectedOrg(itemValue)}
+                                    >
+                                        <Picker.Item 
+                                            label="Select Organization" 
+                                            value={null} 
+                                            color="#ffff"
+                                        />
+                                        {globalReducerState?.getGlobalData?.data?.emp_org?.map((org, index) => (
+                                            <Picker.Item 
+                                                key={index}
+                                                label={org.org_name}
+                                                value={org}
+                                                color="#ffff"
+                                            />
+                                        ))}
+                                    </Picker>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.confirmButton,
+                                        !selectedOrg && styles.confirmButtonDisabled
+                                    ]}
+                                    onPress={handleOrganizationSelect}
+                                    disabled={!selectedOrg}
+                                >
+                                    <Text style={styles.confirmButtonText}>Continue</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </Modal>
-            </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </SafeAreaView>
-    )
-}
+    );
+};
 
-var styles = StyleSheet.create({
-    mainWrapper: {
+const styles = StyleSheet.create({
+    container: {
         flex: 1,
-        // alignItems: "center",
-        backgroundColor: '#FFF',
-        position: "relative",
-        paddingTop: 30,
+        backgroundColor: '#FFFFFF',
+    },
+    headerContainer: {
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 20,
         paddingBottom: 10,
-        paddingHorizontal: 20
     },
-    Heading: {
-        fontSize: 20,
-        fontWeight: "500",
-        color: "#252525",
-        marginBottom: 35
-    },
-    // line: {
-    //     width: 34,
-    //     height: 4,
-    //     backgroundColor: "#1788F0",
-    //     borderRadius: 3,
-    //     marginTop: 10,
-    //     marginBottom: 30
-    // },
-    Row: {
-        flexDirection: "row",
-        marginHorizontal: -5,
-        flexWrap: "wrap"
-    },
-    listItem: {
-        fontSize: 15,
-        padding: 0
-    },
-    btnSubmit: {
-        backgroundColor: "#3b5998",
-        borderRadius: 30,
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 20,
-        paddingHorizontal: 18,
-        paddingVertical: 8
-    },
-    btnSubmitText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: "500",
-        textTransform: "uppercase"
-    },
-    eachbox: {
-        width: "100%",
-        paddingHorizontal: 5,
-        marginBottom: 30
-    },
-    btnArea: {
-        backgroundColor: "#3b5998",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 15,
-        height: 160,
-        borderRadius: 10
-    },
-    centeredView: {
-        width: "100%",
-        height: "100%",
-        position: "absolute",
+    content: {
         flex: 1,
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center"
+        padding: 20,
     },
-    modalView: {
-        width: "85%",
-        margin: 0,
-        flexDirection: "column",
-        backgroundColor: "white",
-        borderRadius: 10,
-        paddingHorizontal: 25,
-        paddingVertical: 25,
-        shadowColor: "#000",
+    headerSection: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    headerIcon: {
+        marginBottom: 16,
+    },
+    title: {
+        color: '#2C3E50',
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 8,
+        lineHeight: 32,
+    },
+    subtitle: {
+        color: '#7F8C8D',
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+    cardsContainer: {
+        marginBottom: 30,
+    },
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E0E6ED',
+        shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2
+            height: 2,
         },
-        shadowOpacity: 0.25,
+        shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 5
+        elevation: 3,
     },
-
+    cardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    leadCard: {
+        opacity: 0.6,
+    },
+    cardIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    customerIcon: {
+        backgroundColor: '#1788F0',
+    },
+    leadIcon: {
+        backgroundColor: '#95A5A6',
+    },
+    cardTextContainer: {
+        flex: 1,
+        marginRight: 16,
+    },
+    cardTitle: {
+        color: '#2C3E50',
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    cardDescription: {
+        color: '#7F8C8D',
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    cardArrow: {
+        alignSelf: 'center',
+    },
+    comingSoonBadge: {
+        backgroundColor: '#FFD700',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+        marginTop: 8,
+    },
+    comingSoonText: {
+        color: '#2C3E50',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    infoSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F9FA',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E0E6ED',
+        marginBottom: 20,
+    },
+    infoIcon: {
+        marginRight: 12,
+    },
+    infoText: {
+        color: '#7F8C8D',
+        fontSize: 14,
+        flex: 1,
+        lineHeight: 20,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 24,
+        width: '100%',
+        maxWidth: 400,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        color: '#2C3E50',
+        fontSize: 20,
+        fontWeight: '700',
+    },
+    modalCloseButton: {
+        padding: 4,
+    },
+    modalSubtitle: {
+        color: '#7F8C8D',
+        fontSize: 16,
+        marginBottom: 20,
+        lineHeight: 24,
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#E0E6ED',
+        borderRadius: 12,
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    picker: {
+        color: '#2C3E50',
+        backgroundColor: '#F8F9FA',
+        height: 50,
+    },
+    confirmButton: {
+        backgroundColor: '#1788F0',
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'center',
+    },
+    confirmButtonDisabled: {
+        backgroundColor: '#CCCCCC',
+    },
+    confirmButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });
 
-export default OrgCustomerSearch
+export default OrgCustomerSearch;
