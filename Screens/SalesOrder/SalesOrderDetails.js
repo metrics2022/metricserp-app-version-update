@@ -4,7 +4,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
     ActivityIndicator,
@@ -12,14 +11,12 @@ import {
     Image
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/FontAwesome';
-
 import { useDispatch, useSelector } from 'react-redux';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { salesOrderDetailsAction } from '../../Redux/Actions/SalesOrderAction';
 import HeaderTextLeft from '../../Component/HeaderTextLeft';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from 'react-native-vector-icons/MaterialIcons'
 
 const SalesOrderDetails = ({ navigation, route }) => {
     const state = useSelector((state) => state.AllSalesOrders);
@@ -28,17 +25,18 @@ const SalesOrderDetails = ({ navigation, route }) => {
     const [currency, setCurrency] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [itemLineDesc, setItemLineDesc] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         dispatch(salesOrderDetailsAction(route.params.header_id));
     }, []);
 
     useEffect(() => {
-        //console.log('hi', state.salesOrderDetails.lines);
-        if (state) {
+        if (state.salesOrderDetails) {
             setData(state.salesOrderDetails);
+            setIsLoading(false);
         }
-    }, [state]);
+    }, [state.salesOrderDetails]);
 
     const readItemFromStorage = async () => {
         try {
@@ -48,6 +46,7 @@ const SalesOrderDetails = ({ navigation, route }) => {
             // read error
         }
     }
+
     useEffect(() => {
         readItemFromStorage().then((e) => setCurrency(e.currency.currency_code));
     }, []);
@@ -56,215 +55,385 @@ const SalesOrderDetails = ({ navigation, route }) => {
         navigation.goBack()
     }
 
-    const handleOpen =(val)=>{
+    const handleOpen = (val) => {
         setModalVisible(true);
         setItemLineDesc(val);
     }
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    }
 
-
+    const formatCurrency = (amount) => {
+        return parseFloat(amount || 0).toFixed(2);
+    }
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            {
-                state.isLoading && (
-                    <View style={{ flex: 1, position: "absolute", zIndex: 2, left: 0, width: "100%", justifyContent: "center", height: "100%", justifyContent: 'center', alignItems: "center", backgroundColor: "rgba(255,255,255,0.4)" }}>
-                        <View style={{
-                            backgroundColor: "#FFF", paddingHorizontal: 15, paddingVertical: 15, borderRadius: 5, shadowOffset: {
-                                width: 0,
-                                height: 3,
-                            },
-                            shadowOpacity: 0.12,
-                            shadowRadius: 4.65,
-                            elevation: 6,
-                        }}>
-                            <ActivityIndicator size="large" color="#1788F0" />
-                        </View>
+        <SafeAreaView style={styles.safeArea}>
+            {state.isLoading && (
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#3B82F6" />
+                        <Text style={styles.loadingText}>Loading order details...</Text>
                     </View>
-                )
-            }
+                </View>
+            )}
+            
             <View style={styles.mainWrapper}>
-                {/* <View style={{ alignItems: "center", marginBottom: 30, position: "relative" }}>
-                    <Text style={{ color: "#000", fontSize: 22, fontWeight: "700" }}>Sales Details</Text>
-                    <View style={styles.line}></View>
-                </View> */}
-                <HeaderTextLeft title={"Sales Order Details"} goBack={goBack} fontSize={25}  />
-                <ScrollView>
-
-                    <View style={{ borderRadius: 10, overflow: "hidden", backgroundColor: "#F9F9F9" }}>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Sales Order#</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.so_code}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Customer Name</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.customer_name}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Date</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{data?.add_datetime}</Text>
-                        </View>
-                        <View style={styles.Label}>
-                            <Text style={{ color: "#626F7F", fontSize: 15, fontWeight: "700" }}>Amount ({currency})</Text>
-                        </View>
-                        <View style={styles.Desc}>
-                            <Text style={{ color: "#626F7F", fontSize: 13 }}>{parseFloat(Number(data?.so_amount) + Number(data?.so_taxamount)).toFixed(2)} (Subtotal: {Number(data?.so_amount).toFixed(2)} + Tax: {Number(data?.so_taxamount).toFixed(2)})</Text>
-                        </View>
-                    </View>
-
-                    <Text style={{ color: "#626F7F", fontSize: 13, marginTop:15 }}>*All prices are tax inclusive</Text>
-                    <View style={{ width: "100%", height: 1, backgroundColor: "#F2F1F8", marginVertical:10 }}></View>
-
-                    {
-                        data?.lines?.map((item, index) => {
-                            return (
-                                <View key={index} style={{position:"relative", paddingRight:85}}>
-                                    {/* <Text style={styles.heading}>{item.item_description} X {Number(item.order_qty).toFixed(0)}</Text> */}
-                                    <View style={{flexDirection:'row', marginBottom:5}}>
-                                    <TouchableOpacity style={{marginRight:5}} onPress={() => handleOpen(item?.so_line_description !== undefined ? item?.so_line_description:'')}>
-                                        {
-                                            item?.item_description == "" ? <Image
-                                                source={require('../../assets/file-icon2.png')}
-                                                style={{ height:20, width: 20 }}
-                                            /> : <Image
-                                                source={require('../../assets/file-icon3.png')}
-                                                style={{ height: 20, width: 20 }}
-                                            />
-                                        }
-
-                                    </TouchableOpacity>
-                                    <Text style={styles.heading}>{item.item_description} X {Number(item.order_qty).toFixed(0)}</Text>
-                                    </View>
-                                    <Text style={styles.para}>{item.measure_name}</Text>
-                                    <Text style={styles.price}>
-                                    {Number(item.line_subtotal).toFixed(2)}</Text>
-                                </View>
-                            )
-                        })
-                    }
-
-                </ScrollView>
-            </View>
-            <View style={[styles.centeredView, { backgroundColor: modalVisible ? "rgba(0,0,0,0.5)" : "transparent", display: modalVisible ? "flex" : "none" }]}>
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={(index) => {
-                        setModalVisible(!modalVisible);
-                    }}
-                >
-                    <View style={{ flex: 1, alignItems: "center", flexDirection: "column", justifyContent: "center" }}>
-                        <View style={styles.modalView}>
-                            <TouchableOpacity onPress={() => {  setModalVisible(false); }} style={{ position: "absolute", right: -10, top: -10, zIndex: 99, backgroundColor: "#FFF", borderRadius: 40, overflow: "hidden" }}><MaterialCommunityIcons size={35} color="red" name="close-circle" /></TouchableOpacity>
-                            <Text style={{ color: "#000", fontSize: 15, marginBottom: 5, paddingHorizontal:0, position: "relative", fontWeight: "700" }}>Line Note</Text>
-                            <View style={styles.line}></View>
-                            <View style={{marginTop:15}}>
-                                <TextInput placeholder="Type quote description"
-                                    editable={false}
-                                    selectTextOnFocus={false}
-                                    multiline
-                                    numberOfLines={3}
-                                    textAlignVertical='top'
-                                    placeholderTextColor="#a1a1a1"
-                                    style={{ backgroundColor: "#e1e2e3", fontSize: 15, color: "#000", paddingHorizontal: 12, paddingTop: 10, height: 150, borderRadius: 10 }}
-                                    value={itemLineDesc}
-                                    defaultValue={itemLineDesc}
-                                    onChangeText={(e) => setItemLineDesc(e)}
-                                />
+                <HeaderTextLeft title={"Order Details"} goBack={goBack} fontSize={22} />
+                
+                {!isLoading && data && (
+                    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                        {/* Order Summary Card */}
+                        <View style={styles.summaryCard}>
+                            <View style={styles.summaryHeader}>
+                                <Icon name="receipt" size={20} color="#3B82F6" />
+                                <Text style={styles.summaryTitle}>Order Summary</Text>
                             </View>
-
+                            
+                            <View style={styles.summaryGrid}>
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Order #</Text>
+                                    <Text style={styles.summaryValue}>{data?.so_code}</Text>
+                                </View>
+                                
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Date</Text>
+                                    <Text style={styles.summaryValue}>{formatDate(data?.add_datetime)}</Text>
+                                </View>
+                                
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Customer</Text>
+                                    <Text style={styles.summaryValue} numberOfLines={1}>{data?.customer_name}</Text>
+                                </View>
+                                
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Subtotal</Text>
+                                    <Text style={styles.summaryValue}>{formatCurrency(data?.so_amount)} {currency}</Text>
+                                </View>
+                                
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Tax</Text>
+                                    <Text style={styles.summaryValue}>{formatCurrency(data?.so_taxamount)} {currency}</Text>
+                                </View>
+                                
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Total</Text>
+                                    <Text style={[styles.summaryValue, styles.totalAmount]}>
+                                        {formatCurrency(Number(data?.so_amount) + Number(data?.so_taxamount))} {currency}
+                                    </Text>
+                                </View>
+                            </View>
+                            
+                            <Text style={styles.taxNote}>*All prices are tax inclusive</Text>
                         </View>
 
-                    </View>
-                </Modal>
+                        {/* Order Items */}
+                        <View style={styles.itemsSection}>
+                            <Text style={styles.sectionTitle}>Order Items</Text>
+                            
+                            {data?.lines?.map((item, index) => (
+                                <View key={index} style={styles.itemCard}>
+                                    <View style={styles.itemHeader}>
+                                        <TouchableOpacity 
+                                            onPress={() => handleOpen(item?.so_line_description || '')}
+                                            style={styles.descriptionIcon}
+                                        >
+                                            {item?.item_description === "" ? (
+                                                <Image
+                                                    source={require('../../assets/file-icon2.png')}
+                                                    style={styles.fileIcon}
+                                                />
+                                            ) : (
+                                                <Image
+                                                    source={require('../../assets/file-icon3.png')}
+                                                    style={styles.fileIcon}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                        
+                                        <View style={styles.itemInfo}>
+                                            <Text style={styles.itemName} numberOfLines={2}>
+                                                {item.item_description}
+                                            </Text>
+                                            <Text style={styles.itemQuantity}>
+                                                Quantity: {Number(item.order_qty).toFixed(0)}
+                                            </Text>
+                                            <Text style={styles.itemMeasure}> /
+                                                {item.measure_name}
+                                            </Text>
+                                        </View>
+                                        
+                                        <Text style={styles.itemPrice}>
+                                            {formatCurrency(item.line_subtotal)} {currency}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    </ScrollView>
+                )}
             </View>
+
+            {/* Line Note Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Line Note</Text>
+                            <TouchableOpacity 
+                                onPress={() => setModalVisible(false)} 
+                                style={styles.closeButton}
+                            >
+                                <MaterialCommunityIcons name="close" size={24} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalDescription}>
+                                Additional information for this order line:
+                            </Text>
+                            
+                            <View style={styles.noteContainer}>
+                                <Text style={styles.noteText}>
+                                    {itemLineDesc || 'No description available'}
+                                </Text>
+                            </View>
+                        </View>
+                        
+                        <TouchableOpacity 
+                            style={styles.modalButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Text style={styles.modalButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }
 
-var styles = StyleSheet.create({
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#F9FAFB',
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(255,255,255,0.9)",
+        justifyContent: 'center',
+        alignItems: "center",
+        zIndex: 10,
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+        padding: 30,
+        borderRadius: 10,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#4B5563',
+    },
     mainWrapper: {
         flex: 1,
-        backgroundColor: '#FFF',
-        paddingTop: 30,
+        backgroundColor: '#F9FAFB',
+        paddingTop: 20,
         paddingBottom: 10,
-        paddingHorizontal: 20
+        paddingHorizontal: 16
     },
-    Row: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingBottom: 15,
-        borderBottomColor: "#e1e1e1",
-        borderBottomWidth: 1,
-        borderStyle: "solid",
-        marginBottom: 15
-    },
-    // line: {
-    //     width: 50,
-    //     height: 4,
-    //     backgroundColor: "#1788F0",
-    //     borderRadius: 3,
-    //     marginTop: 10
-    // },
-    heading: {
-        fontSize: 15,
-        color: "#767677",
-        fontWeight: "700"
-    },
-    para: {
-        fontSize: 14,
-        color: "#000",
-        fontWeight: "400",
-        marginBottom: 15
-    },
-    price:{
-        position:"absolute",
-        top:0,
-        right:10,
-        color:"#000"
-    },
-    Label: {
-        backgroundColor: "#F2F1F8",
-        paddingHorizontal: 14,
-        paddingVertical: 8
-    },
-    Desc: {
-        paddingHorizontal: 14,
-        paddingVertical: 10
-    },
-    centeredView: {
-        width: "100%",
-        height: "100%",
-        position: "absolute",
+    scrollView: {
         flex: 1,
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center"
     },
-    modalView: {
-        width: "85%",
-        margin: 0,
-        flexDirection: "column",
-        backgroundColor: "white",
+    summaryCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    summaryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    summaryTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginLeft: 8,
+    },
+    summaryGrid: {
+        gap: 12,
+    },
+    summaryItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    summaryLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    summaryValue: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    totalAmount: {
+        fontWeight: '700',
+        color: '#1F2937',
+        fontSize: 16,
+    },
+    taxNote: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontStyle: 'italic',
+        marginTop: 12,
+        textAlign: 'center',
+    },
+    itemsSection: {
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 16,
+    },
+    itemCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    itemHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    descriptionIcon: {
+        marginRight: 12,
+        padding: 4,
+    },
+    fileIcon: {
+        height: 24,
+        width: 24,
+    },
+    itemInfo: {
+        flex: 1,
+        marginRight: 12,
+    },
+    itemName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 4,
+    },
+    itemQuantity: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginBottom: 2,
+    },
+    itemMeasure: {
+        fontSize: 14,
+        color: '#6B7280',
+    },
+    itemPrice: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 24,
+        width: '100%',
+        maxWidth: 400,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalContent: {
+        marginBottom: 20,
+    },
+    modalDescription: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginBottom: 12,
+        lineHeight: 20,
+    },
+    noteContainer: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+        padding: 16,
+        minHeight: 100,
+    },
+    noteText: {
+        fontSize: 14,
+        color: '#374151',
+        lineHeight: 20,
+    },
+    modalButton: {
+        backgroundColor: '#3B82F6',
         borderRadius: 10,
-        paddingHorizontal: 25,
-        paddingVertical: 25,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5
-    }
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    modalButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });
 
-export default SalesOrderDetails
+export default SalesOrderDetails;

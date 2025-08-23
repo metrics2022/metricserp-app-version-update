@@ -122,7 +122,7 @@ const LeadCompany = ({ navigation, route }) => {
     const renderCompanyItem = ({ item }) => (
         <TouchableWithoutFeedback onPress={() => handleCompanySelect(item)}>
             <View style={styles.companyItem}>
-                <Icon name="building" size={18} color="#7F8C8D" style={styles.companyIcon} />
+                {/* <Icon name="building" size={18} color="#7F8C8D" style={styles.companyIcon} /> */}
                 <Text style={styles.companyName} numberOfLines={1}>
                     {item?.company_name || 'Unnamed Company'}
                 </Text>

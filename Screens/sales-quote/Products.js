@@ -20,8 +20,7 @@ import {
     Dimensions,
     Animated
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import Fontawesome from 'react-native-vector-icons/FontAwesome';
 import { Chip } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,9 +29,7 @@ import { BrandAutoComplete } from '../../Redux/Actions/BrandAutoCompleteAction';
 import { Search } from '../../Redux/Actions/SearchCustomerAction';
 import { addToCart, addToCartFromQuote, handleAddToCart } from '../../Redux/Actions/cartAction';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import HeaderTextLeft from '../../Component/HeaderTextLeft';
 import Icon from 'react-native-vector-icons/AntDesign';
-import AntDesign from 'react-native-vector-icons/AntDesign';
 import HeaderTextLeftRight from '../../Component/HeaderTextLeftRight';
 import { getMyLocalData } from '../../config/getLocalStorageData';
 import axios from 'axios';
@@ -788,7 +785,7 @@ const Products = ({ route, navigation }) => {
                                     
                                     <Text style={styles.modalTitle}>{itemDesc}</Text>
                                     
-                                    {globalReducerState?.getGlobalData?.data?.allow_so_price_change == 1 ? (
+                                    {globalReducerState?.getGlobalData?.data?.allow_sq_price_change == 1 ? (
                                         editingPriceProductId === productId ? (
                                             <View style={styles.priceEditContainer}>
                                                 <Text style={styles.currencySymbol}>

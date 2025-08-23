@@ -258,7 +258,8 @@ const TabNavigator = ({ route }) => {
           options={{
             tabBarLabel: 'Orders',
             tabBarIcon: ({ color }) => (
-              <MaterialCommunityIcons name="account" color={color} size={24} />
+              
+              <Icon name="inbox" size={24} color={color} />
             ),
           }}
         />
