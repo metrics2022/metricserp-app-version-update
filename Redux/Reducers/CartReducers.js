@@ -41,26 +41,48 @@ export const CartReducer = (state = initialState, action) => {
       //   };
       // }
 
-    case ADD_TO_CART_FROM_QUOTE:
-      const { productData } = action.payload;
-      const exists = state.cartItems.find(item =>
-        item.itemId === productData.itemId &&
-        item.uom === productData.uom &&
-        item.itemLineDesc === productData.itemLineDesc
-      );
+  case ADD_TO_CART_FROM_QUOTE: {
+  const { productData } = action.payload;
 
-      if (exists) {
-        // Exact same product with same UOM and note exists – do nothing
+  const existingIndex = state.cartItems.findIndex(item =>
+    item.productId === productData.productId &&
+    item.uom === productData.uom &&
+    (
+      // Merge if descriptions match OR if one is blank
+      item.itemLineDesc === productData.itemLineDesc ||
+      (!item.itemLineDesc && !productData.itemLineDesc)
+    )
+  );
+
+  if (existingIndex !== -1) {
+    const updatedCart = state.cartItems.map((item, index) => {
+      if (index === existingIndex) {
         return {
-          ...state,
-        };
-      } else {
-        // Add new product (different note or UOM or itemId)
-        return {
-          ...state,
-          cartItems: [...state.cartItems, productData],
+          ...item,
+          product_qty: Number(item.product_qty) + Number(productData.product_qty),
+          itemLineDesc: item.itemLineDesc || productData.itemLineDesc // Keep existing if not empty
         };
       }
+      return item;
+    });
+
+    return {
+      ...state,
+      cartItems: updatedCart
+    };
+  } else {
+    return {
+      ...state,
+      cartItems: [...state.cartItems, {
+        ...productData,
+        product_qty: Number(productData.product_qty)
+      }]
+    };
+  }
+}
+
+
+
 
     case REMOVE_FROM_CART:
       let removeItem = state.cartItems.filter((item, index) => {

@@ -116,7 +116,7 @@ const Products = ({ route, navigation }) => {
     const showToastMessage = (message) => {
         setToastMessage(message);
         setShowToast(true);
-        
+
         Animated.sequence([
             Animated.timing(toastOpacity, {
                 toValue: 1,
@@ -278,20 +278,20 @@ const Products = ({ route, navigation }) => {
     const RadioButton = ({ options, index }) => {
         return (
             options?.map((item, index) => (
-                <Chip 
-                    selected={uom == item.uom_id ? true : false} 
-                    selectedColor={uom == item.uom_id ? "#FFF" : "#000"} 
-                    textStyle={{ fontSize: 15, color: uom == item.uom_id ? "#FFF" : "#000" }} 
-                    style={{ 
-                        marginHorizontal: 6, 
-                        paddingHorizontal: 8, 
+                <Chip
+                    selected={uom == item.uom_id ? true : false}
+                    selectedColor={uom == item.uom_id ? "#FFF" : "#000"}
+                    textStyle={{ fontSize: 15, color: uom == item.uom_id ? "#FFF" : "#000" }}
+                    style={{
+                        marginHorizontal: 6,
+                        paddingHorizontal: 8,
                         backgroundColor: uom == item.uom_id ? "#1788F0" : "#F0F4F8",
                         borderColor: uom == item.uom_id ? "#1788F0" : "#E0E6ED",
                         borderWidth: 1,
                         marginBottom: 8
-                    }} 
-                    key={index} 
-                    onPress={() => handleRadioBtn(item.measure_name, item.uom_id, item.unit_price, index)} 
+                    }}
+                    key={index}
+                    onPress={() => handleRadioBtn(item.measure_name, item.uom_id, item.unit_price, index)}
                 >
                     {item.measure_name}
                 </Chip>
@@ -312,10 +312,10 @@ const Products = ({ route, navigation }) => {
 
     const renderItem = ({ item, index }) => {
         const isItemInCart = cartState.cartItems.some(cartItem => cartItem.productId === item.item_id);
-        
+        console.log("cartState.cartItems", cartState.cartItems)
         return (
-            <TouchableOpacity 
-                style={styles.productCard} 
+            <TouchableOpacity
+                style={styles.productCard}
                 onPress={() => handleOpen(item)}
             >
                 {item?.cpl_price?.length > 0 && (
@@ -341,27 +341,23 @@ const Products = ({ route, navigation }) => {
                     </Text>
 
                     <Text style={styles.productPrice}>
-                        {globalReducerState?.getGlobalData?.data?.currency?.currency_code} 
-                        {item?.cpl_price?.length > 0 
-                            ? Number(item?.cpl_price[0]?.unit_price).toFixed(2) 
+                        {globalReducerState?.getGlobalData?.data?.currency?.currency_code}
+                        {item?.cpl_price?.length > 0
+                            ? Number(item?.cpl_price[0]?.unit_price).toFixed(2)
                             : Number(item?.price[0]?.unit_price).toFixed(2)}
                         <Text style={styles.unitText}>
                             /{item?.cpl_price?.length > 0 ? item?.cpl_price[0]?.measure_name : item?.price[0]?.measure_name}
                         </Text>
                     </Text>
 
-                    <TouchableOpacity 
-                        style={[styles.cartButton, isItemInCart && styles.goToCartButton]}
+                    <TouchableOpacity
+                        style={[styles.cartButton]}
                         onPress={() => {
-                            if (isItemInCart) {
-                                navigation.navigate('Cart');
-                            } else {
-                                handleOpen(item);
-                            }
+                            handleOpen(item);
                         }}
                     >
                         <Text style={styles.cartButtonText}>
-                            {isItemInCart ? 'GO TO CART' : 'ADD TO CART'}
+                            ADD TO CART
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -494,17 +490,17 @@ const Products = ({ route, navigation }) => {
 
     const RenderCategoryItem = React.memo(({ item }) => {
         return (
-            <TouchableOpacity 
-                onPress={() => { 
-                    setInputVal(item.category_name); 
-                    setCategoryNameForShow(item.category_name); 
-                    setCategoryId(item.category_id); 
-                    setCategoryModal(false); 
-                    setInputVal(""); 
+            <TouchableOpacity
+                onPress={() => {
+                    setInputVal(item.category_name);
+                    setCategoryNameForShow(item.category_name);
+                    setCategoryId(item.category_id);
+                    setCategoryModal(false);
+                    setInputVal("");
                     setPageNumberOfCategory(1);
-                    handleCategorySearch("", false); 
-                    dispatch({ type: 'UPDATE_CATEGORY', payload: { value: item.category_id, label: item.category_name } }); 
-                }} 
+                    handleCategorySearch("", false);
+                    dispatch({ type: 'UPDATE_CATEGORY', payload: { value: item.category_id, label: item.category_name } });
+                }}
                 style={styles.categoryItem}
             >
                 <Text style={styles.categoryText}>{item.category_name}</Text>
@@ -521,7 +517,7 @@ const Products = ({ route, navigation }) => {
                 </View>
             );
         }
-        
+
         if (!loader && categoryTotalCount > 0 && categoryList?.length >= categoryTotalCount) {
             return (
                 <View style={styles.endOfList}>
@@ -529,7 +525,7 @@ const Products = ({ route, navigation }) => {
                 </View>
             );
         }
-        
+
         return null;
     };
 
@@ -542,17 +538,17 @@ const Products = ({ route, navigation }) => {
 
     const RenderBrandItem = React.memo(({ item }) => {
         return (
-            <TouchableOpacity 
-                onPress={() => { 
-                    setBrandInputVal(item.brand_name); 
-                    setBrandNameForShow(item.brand_name); 
-                    setBrandId(item.brand_id); 
-                    setBrandModal(false); 
-                    setBrandInputVal(""); 
+            <TouchableOpacity
+                onPress={() => {
+                    setBrandInputVal(item.brand_name);
+                    setBrandNameForShow(item.brand_name);
+                    setBrandId(item.brand_id);
+                    setBrandModal(false);
+                    setBrandInputVal("");
                     setPageNumberOfBrand(1);
-                    handleBrandSearch("", false); 
-                    dispatch({ type: 'UPDATE_BRAND', payload: { value: item.brand_id, label: item.brand_name } }); 
-                }} 
+                    handleBrandSearch("", false);
+                    dispatch({ type: 'UPDATE_BRAND', payload: { value: item.brand_id, label: item.brand_name } });
+                }}
                 style={styles.brandItem}
             >
                 <Text style={styles.brandText}>{item.brand_name}</Text>
@@ -569,7 +565,7 @@ const Products = ({ route, navigation }) => {
                 </View>
             );
         }
-        
+
         if (!loader && brandTotalCount > 0 && bandList?.length >= brandTotalCount) {
             return (
                 <View style={styles.endOfList}>
@@ -577,7 +573,7 @@ const Products = ({ route, navigation }) => {
                 </View>
             );
         }
-        
+
         return null;
     };
 
@@ -590,19 +586,19 @@ const Products = ({ route, navigation }) => {
     return (
         <SafeAreaView style={styles.safeArea}>
             {searchState?.isLoading && <LogoOverlay />}
-            
+
             {/* Toast Notification */}
             {showToast && (
                 <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
                     <Text style={styles.toastText}>{toastMessage}</Text>
                 </Animated.View>
             )}
-            
+
             <View style={styles.container}>
-                <HeaderTextLeftRight 
-                    title={"Products"} 
-                    goBack={goBack} 
-                    fontSize={20} 
+                <HeaderTextLeftRight
+                    title={"Products"}
+                    goBack={goBack}
+                    fontSize={20}
                     component={
                         <TouchableOpacity style={styles.cartIconContainer} onPress={handlePress}>
                             <Icon
@@ -617,14 +613,14 @@ const Products = ({ route, navigation }) => {
                                 </View>
                             )}
                         </TouchableOpacity>
-                    } 
+                    }
                 />
 
                 <View style={styles.customerInfo}>
-                    <Text style={styles.customerLabel}>Customer: 
+                    <Text style={styles.customerLabel}>Customer:
                         <Text style={styles.customerValue}> {route.params?.customerName}</Text>
                     </Text>
-                    <Text style={styles.customerLabel}>Organization: 
+                    <Text style={styles.customerLabel}>Organization:
                         <Text style={styles.customerValue}> {getOrgName?.org_name}</Text>
                     </Text>
                 </View>
@@ -632,68 +628,68 @@ const Products = ({ route, navigation }) => {
                 <View style={styles.filterContainer}>
                     <View style={styles.filterRow}>
                         <View style={styles.filterItem}>
-                            <TouchableOpacity 
-                                style={styles.filterButton} 
-                                onPress={() => { 
-                                    setCategoryModal(true); 
+                            <TouchableOpacity
+                                style={styles.filterButton}
+                                onPress={() => {
+                                    setCategoryModal(true);
                                     setIsCategoryModalOpen(true);
                                     setPageNumberOfCategory(1);
-                                    handleCategorySearch(''); 
+                                    handleCategorySearch('');
                                 }}
                             >
                                 <Text style={[
                                     styles.filterButtonText,
                                     searchState?.searchAllValues?.category?.label !== undefined && styles.filterButtonTextActive
                                 ]}>
-                                    {searchState?.searchAllValues?.category?.label !== undefined 
-                                        ? searchState?.searchAllValues?.category?.label 
+                                    {searchState?.searchAllValues?.category?.label !== undefined
+                                        ? searchState?.searchAllValues?.category?.label
                                         : 'Select Category'}
                                 </Text>
                                 {searchState?.searchAllValues?.category?.label !== undefined && (
-                                    <Icon 
-                                        size={18} 
-                                        color="#E74C3C" 
-                                        name="closecircle" 
-                                        onPress={() => { 
-                                            setCategoryNameForShow(''); 
-                                            setCategoryId(''); 
-                                            dispatch({ type: 'UPDATE_CATEGORY', payload: {} }); 
-                                        }} 
-                                        style={styles.filterCloseIcon}  
+                                    <Icon
+                                        size={18}
+                                        color="#E74C3C"
+                                        name="closecircle"
+                                        onPress={() => {
+                                            setCategoryNameForShow('');
+                                            setCategoryId('');
+                                            dispatch({ type: 'UPDATE_CATEGORY', payload: {} });
+                                        }}
+                                        style={styles.filterCloseIcon}
                                     />
                                 )}
                             </TouchableOpacity>
                         </View>
-                        
+
                         <View style={styles.filterItem}>
-                            <TouchableOpacity 
-                                style={styles.filterButton} 
-                                onPress={() => { 
-                                    setBrandModal(true); 
+                            <TouchableOpacity
+                                style={styles.filterButton}
+                                onPress={() => {
+                                    setBrandModal(true);
                                     setIsBrandModalOpen(true);
                                     setPageNumberOfBrand(1);
-                                    handleBrandSearch(''); 
+                                    handleBrandSearch('');
                                 }}
                             >
                                 <Text style={[
                                     styles.filterButtonText,
                                     searchState?.searchAllValues?.brand?.label !== undefined && styles.filterButtonTextActive
                                 ]}>
-                                    {searchState?.searchAllValues?.brand?.label !== undefined 
-                                        ? searchState?.searchAllValues?.brand?.label 
+                                    {searchState?.searchAllValues?.brand?.label !== undefined
+                                        ? searchState?.searchAllValues?.brand?.label
                                         : 'Select Brand'}
                                 </Text>
                                 {searchState?.searchAllValues?.brand?.label !== undefined && (
-                                    <Icon 
-                                        size={18} 
-                                        color="#E74C3C" 
-                                        name="closecircle" 
-                                        onPress={() => { 
-                                            setBrandNameForShow(''); 
-                                            setBrandId(''); 
-                                            dispatch({ type: 'UPDATE_BRAND', payload: {} }); 
-                                        }} 
-                                        style={styles.filterCloseIcon}  
+                                    <Icon
+                                        size={18}
+                                        color="#E74C3C"
+                                        name="closecircle"
+                                        onPress={() => {
+                                            setBrandNameForShow('');
+                                            setBrandId('');
+                                            dispatch({ type: 'UPDATE_BRAND', payload: {} });
+                                        }}
+                                        style={styles.filterCloseIcon}
                                     />
                                 )}
                             </TouchableOpacity>
@@ -702,18 +698,18 @@ const Products = ({ route, navigation }) => {
 
                     <View style={styles.searchContainer}>
                         <View style={styles.searchInputContainer}>
-                            <TextInput 
-                                value={searchState?.searchAllValues?.searchValue} 
+                            <TextInput
+                                value={searchState?.searchAllValues?.searchValue}
                                 onChangeText={(e) => {
-                                    setSearchKeyword(e); 
+                                    setSearchKeyword(e);
                                     dispatch({
                                         type: 'UPDATE_SEARCH_VALUE',
                                         payload: e,
                                     })
-                                }} 
-                                placeholder="Search for products..." 
-                                placeholderTextColor="#7F8C8D" 
-                                style={styles.searchInput} 
+                                }}
+                                placeholder="Search for products..."
+                                placeholderTextColor="#7F8C8D"
+                                style={styles.searchInput}
                             />
                             {searchState?.searchAllValues?.searchValue !== "" && (
                                 <Icon
@@ -774,7 +770,7 @@ const Products = ({ route, navigation }) => {
                             style={styles.keyboardAvoidView}
                             keyboardVerticalOffset={Platform.select({ ios: 0, android: 0 })}
                         >
-                            <ScrollView 
+                            <ScrollView
                                 contentContainerStyle={styles.scrollContainer}
                                 keyboardShouldPersistTaps="handled"
                             >
@@ -782,9 +778,9 @@ const Products = ({ route, navigation }) => {
                                     <TouchableOpacity onPress={() => handleClose()} style={styles.modalCloseBtn}>
                                         <Icon size={28} color="#E74C3C" name="closecircle" />
                                     </TouchableOpacity>
-                                    
+
                                     <Text style={styles.modalTitle}>{itemDesc}</Text>
-                                    
+
                                     {globalReducerState?.getGlobalData?.data?.allow_sq_price_change == 1 ? (
                                         editingPriceProductId === productId ? (
                                             <View style={styles.priceEditContainer}>
@@ -845,69 +841,69 @@ const Products = ({ route, navigation }) => {
                                     )}
 
                                     <View style={styles.quantityContainer}>
-                                        <TouchableOpacity 
-                                            disabled={product_qty <= 1} 
-                                            onPress={handleDecrement} 
+                                        <TouchableOpacity
+                                            disabled={product_qty <= 1}
+                                            onPress={handleDecrement}
                                             style={[styles.quantityButton, product_qty <= 1 && styles.quantityButtonDisabled]}
                                         >
-                                            <Icon 
-                                                size={20} 
-                                                color={product_qty <= 1 ? "#CCC" : "#2C3E50"} 
-                                                name="minus" 
+                                            <Icon
+                                                size={20}
+                                                color={product_qty <= 1 ? "#CCC" : "#2C3E50"}
+                                                name="minus"
                                             />
                                         </TouchableOpacity>
-                                        
+
                                         {isEditing ? (
-                                            <TextInput 
-                                                keyboardType='numeric' 
-                                                autoFocus 
-                                                value={product_qty.toString()} 
-                                                onChangeText={(e) => handleNumberChange(e)} 
-                                                style={styles.quantityInput} 
+                                            <TextInput
+                                                keyboardType='numeric'
+                                                autoFocus
+                                                value={product_qty.toString()}
+                                                onChangeText={(e) => handleNumberChange(e)}
+                                                style={styles.quantityInput}
                                             />
                                         ) : (
                                             <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.quantityDisplay}>
                                                 <Text style={styles.quantityText}>{Number(product_qty)}</Text>
                                             </TouchableOpacity>
                                         )}
-                                        
-                                        <TouchableOpacity 
-                                            onPress={handleIncrement} 
+
+                                        <TouchableOpacity
+                                            onPress={handleIncrement}
                                             style={styles.quantityButton}
                                         >
                                             <Icon size={20} color="#2C3E50" name="plus" />
                                         </TouchableOpacity>
                                     </View>
-                                    
+
                                     <View style={styles.uomContainer}>
                                         <RadioButton options={pricingArray} />
                                     </View>
-                                    
+
                                     <Text style={styles.totalPrice}>
-                                        <Text style={styles.totalLabel}>Total:</Text> 
+                                        <Text style={styles.totalLabel}>Total:</Text>
                                         {globalReducerState?.getGlobalData?.data?.currency?.currency_code} {Number(totalPrice).toFixed(2)}
                                     </Text>
-                                    
+
                                     <View style={styles.modalActions}>
                                         <Pressable
                                             style={styles.addToCartButton}
                                             onPress={() => {
                                                 const uniqueCartId = `${productId}-${uom}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                                                
+
                                                 dispatch(addToCartFromQuote({
                                                     productData: {
-                                                        itemDesc, 
-                                                        product_qty: Number(product_qty), 
-                                                        productId, 
-                                                        uom, 
-                                                        uom_name, 
-                                                        totalPrice: Number(totalPrice), 
-                                                        price: Number(price), 
-                                                        itemLineDesc, 
+                                                        itemDesc,
+                                                        product_qty: Number(product_qty),
+                                                        productId,
+                                                        uom,
+                                                        uom_name,
+                                                        totalPrice: Number(totalPrice),
+                                                        price: Number(price),
+                                                        itemLineDesc,
                                                         cartItemId: uniqueCartId
                                                     }
                                                 }));
-                                                
+
                                                 showToastMessage('Product added to cart successfully!');
                                                 handleClose();
                                                 setIsEditing(false);
@@ -916,8 +912,8 @@ const Products = ({ route, navigation }) => {
                                             <Text style={styles.addToCartText}>ADD TO CART</Text>
                                         </Pressable>
                                     </View>
-                                    
-                                    <TextInput 
+
+                                    <TextInput
                                         placeholder="Add any notes or special instructions for this item..."
                                         editable
                                         multiline
@@ -951,41 +947,41 @@ const Products = ({ route, navigation }) => {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalHeaderTitle}>All Categories</Text>
                         <View style={styles.headerDivider} />
-                        <TouchableOpacity 
-                            onPress={() => { setInputVal(""); setCategoryId(""); handleCategorySearch(""); setCategoryModal(false); }} 
+                        <TouchableOpacity
+                            onPress={() => { setInputVal(""); setCategoryId(""); handleCategorySearch(""); setCategoryModal(false); }}
                             style={styles.modalHeaderClose}
                         >
                             <Icon size={28} color="#E74C3C" name="closecircle" />
                         </TouchableOpacity>
-                        
+
                         <View style={styles.modalSearchContainer}>
-                            <TextInput 
-                                placeholder="Search categories..." 
-                                placeholderTextColor="#7F8C8D" 
-                                value={inputVal} 
-                                onChangeText={(e) => { 
+                            <TextInput
+                                placeholder="Search categories..."
+                                placeholderTextColor="#7F8C8D"
+                                value={inputVal}
+                                onChangeText={(e) => {
                                     setInputVal(e);
                                     setPageNumberOfCategory(1);
-                                    
+
                                     if (searchTimeout) {
                                         clearTimeout(searchTimeout);
                                     }
-                                    
+
                                     setSearchTimeout(setTimeout(() => {
                                         if (e.trim() === "" || e.length >= 3) {
                                             handleCategorySearch(e, false);
                                         }
                                     }, 500));
-                                }} 
-                                style={styles.modalSearchInput} 
+                                }}
+                                style={styles.modalSearchInput}
                             />
                             {inputVal?.length > 0 && (
-                                <Icon 
-                                    size={22} 
-                                    color="#E74C3C" 
-                                    name="closecircle" 
-                                    onPress={() => { setInputVal(""); setCategoryId(""); handleCategorySearch(""); }} 
-                                    style={styles.modalSearchClose} 
+                                <Icon
+                                    size={22}
+                                    color="#E74C3C"
+                                    name="closecircle"
+                                    onPress={() => { setInputVal(""); setCategoryId(""); handleCategorySearch(""); }}
+                                    style={styles.modalSearchClose}
                                 />
                             )}
                         </View>
@@ -1020,41 +1016,41 @@ const Products = ({ route, navigation }) => {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalHeaderTitle}>All Brands</Text>
                         <View style={styles.headerDivider} />
-                        <TouchableOpacity 
-                            onPress={() => { setBrandInputVal(""); setBrandId(''); handleBrandSearch(''); setBrandModal(false); }} 
+                        <TouchableOpacity
+                            onPress={() => { setBrandInputVal(""); setBrandId(''); handleBrandSearch(''); setBrandModal(false); }}
                             style={styles.modalHeaderClose}
                         >
                             <Icon size={28} color="#E74C3C" name="closecircle" />
                         </TouchableOpacity>
-                        
+
                         <View style={styles.modalSearchContainer}>
-                            <TextInput 
-                                placeholder="Search brands..." 
-                                placeholderTextColor="#7F8C8D" 
-                                value={brandInputVal} 
-                                onChangeText={(e) => { 
+                            <TextInput
+                                placeholder="Search brands..."
+                                placeholderTextColor="#7F8C8D"
+                                value={brandInputVal}
+                                onChangeText={(e) => {
                                     setBrandInputVal(e);
                                     setPageNumberOfBrand(1);
-                                    
+
                                     if (searchTimeout) {
                                         clearTimeout(searchTimeout);
                                     }
-                                    
+
                                     setSearchTimeout(setTimeout(() => {
                                         if (e.trim() === "" || e.length > 2) {
                                             handleBrandSearch(e, false);
                                         }
                                     }, 500));
-                                }} 
-                                style={styles.modalSearchInput} 
+                                }}
+                                style={styles.modalSearchInput}
                             />
                             {brandInputVal?.length > 0 && (
-                                <Icon 
-                                    size={22} 
-                                    color="#E74C3C" 
-                                    name="closecircle" 
-                                    onPress={() => { setBrandInputVal(""); setBrandId(""); handleBrandSearch(""); }} 
-                                    style={styles.modalSearchClose} 
+                                <Icon
+                                    size={22}
+                                    color="#E74C3C"
+                                    name="closecircle"
+                                    onPress={() => { setBrandInputVal(""); setBrandId(""); handleBrandSearch(""); }}
+                                    style={styles.modalSearchClose}
                                 />
                             )}
                         </View>

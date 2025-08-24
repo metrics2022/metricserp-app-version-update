@@ -35,15 +35,15 @@ const RootStackScreen = () => {
 
   const isFocused = useIsFocused();
 
-  enableScreens()
-  const readItemFromStorage = async () => {
+  // enableScreens()
+  const readItemFromStorage = async (data) => {
     try {
       const loggedInUser = await AsyncStorage.getItem("uuid");
       //console.log("localstoragedata", loggedInUser);
       if (loggedInUser !== null) {
         setIsLoggedIn(loggedInUser);
       }else{
-        setIsLoggedIn("");
+        setIsLoggedIn(data);
       }
     } catch (e) {
       alert('Failed to fetch the data from storage')
@@ -51,12 +51,16 @@ const RootStackScreen = () => {
   }
 
   useEffect(() => {
-    readItemFromStorage();
+    readItemFromStorage(verifyState?.verifyData?.data);
     setTimeout(() => {
       setIsloading(false);
     }, 1500);
 
-  }, []);
+  }, [verifyState]);
+
+
+ console.log("verifyState", verifyState)
+ console.log("isLoggedIn", isLoggedIn)
 
   const MINUTE_MS = 10000;
   let alertPresent = false;
@@ -123,7 +127,7 @@ const RootStackScreen = () => {
       headerShown: false
     }}>
       {
-        isLoggedIn != "" ? (
+        isLoggedIn ? (
           < >
           <RootStack.Screen name="service" component={AllServices} />
           <RootStack.Screen name="tab" component={TabScreen} />
